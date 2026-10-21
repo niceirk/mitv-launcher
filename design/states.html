@@ -1,0 +1,778 @@
+<title>Лаунчер Mi TV — состояния</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Доска состояний: каждый экран — кадр 1920×1080 в масштабе, под ним — когда появляется, пульт и место в коде.
+   Доска намеренно тёмная: так экраны выглядят как на телевизоре. Внутри кадров — токены самого лаунчера. */
+:root {
+  color-scheme: dark;
+  --page: #080b0f;
+  --page-ink: #d9e0e7;
+  --page-soft: #8794a1;
+  --page-line: #1c242d;
+  --page-card: #0e1319;
+  --page-id: #b9c4cf;
+  /* токены лаунчера (MainActivity.kt) */
+  --ground: #0c1117;
+  --ink: #eef2f6;
+  --soft: #9aa6b2;
+  --on-focus: #0f141a;
+  --edge: rgba(236,242,248,.14);
+  --panel: rgba(18,24,31,.94);
+  --warn: #f0a4a4;
+  --ok: #5fd38a;
+  --rec: #eb5757;
+  --font-tv: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-board: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-id: "IBM Plex Mono", ui-monospace, monospace;
+}
+html { background: var(--page); }
+body {
+  background: var(--page); color: var(--page-ink); font-family: var(--font-board); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1680px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+header.top { display: flex; flex-direction: column; gap: 10px; max-width: 80ch; }
+header.top h1 { font-size: 30px; font-weight: 600; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+header.top p { margin: 0; color: var(--page-soft); }
+.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; }
+.toc a { color: var(--page-ink); text-decoration: none; border-bottom: 1px solid var(--page-line); }
+.toc a:hover, .toc a:focus-visible { border-color: var(--page-ink); outline: none; }
+section.grp { display: flex; flex-direction: column; gap: 20px; }
+section.grp > h2 { font-size: 20px; font-weight: 600; margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--page-line); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 640px), 1fr)); gap: 32px 28px; }
+figure.f { margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; scroll-margin-top: 16px; }
+.f-head { display: flex; align-items: baseline; gap: 12px; }
+.f-id { font-family: var(--font-id); font-size: 13px; color: var(--page-id); padding: 2px 8px; border: 1px solid var(--page-line); border-radius: 6px; flex: none; }
+.f-title { font-size: 17px; font-weight: 600; }
+.tv { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-radius: 10px; box-shadow: 0 0 0 1px var(--page-line); background: var(--ground); }
+.scr { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--font-tv); }
+figcaption { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; color: var(--page-soft); }
+figcaption b { font-weight: 500; color: var(--page-ink); }
+figcaption code { font-family: var(--font-id); font-size: 12.5px; color: var(--page-id); }
+footer.note { color: var(--page-soft); font-size: 14px; max-width: 80ch; }
+
+/* ---------- Экран телевизора ---------- */
+.scr * { box-sizing: border-box; }
+.abs { position: absolute; }
+.art { position: absolute; inset: 0 0 auto 0; height: 640px; }
+.art::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 33%, rgba(12,17,23,.72) 66%, var(--ground) 100%); }
+.art::before { content: ""; position: absolute; left: 0; top: 0; width: 1060px; height: 640px; z-index: 1;
+  background: linear-gradient(90deg, rgba(12,17,23,.75), transparent); }
+.stext { position: absolute; left: 96px; bottom: 580px; width: 1000px; display: flex; flex-direction: column; }
+.kind { font-size: 26px; font-weight: 500; color: var(--soft); }
+.title { font-size: 96px; font-weight: 600; letter-spacing: -.03em; line-height: 1.05; margin-top: 14px; white-space: nowrap; }
+.facts { display: flex; gap: 14px; margin-top: 28px; }
+.fact { font-size: 22px; font-weight: 500; padding: 10px 18px; border-radius: 999px; background: rgba(236,242,248,.08); box-shadow: inset 0 0 0 1px var(--edge); }
+.fact.warn { color: var(--warn); box-shadow: inset 0 0 0 1px rgba(240,164,164,.35); }
+
+.topbar { position: absolute; top: 44px; right: 96px; display: flex; align-items: center; gap: 14px; }
+.chip { height: 68px; min-width: 68px; padding: 0 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: 25px; font-weight: 500; opacity: .72; background: rgba(236,242,248,.14); box-shadow: inset 0 0 0 1px rgba(236,242,248,.11); }
+.chip.ic { padding: 0; }
+.chip.tg { padding: 0 22px 0 18px; gap: 10px; }
+.chip.tm { padding: 0 18px; }
+.chip.on { opacity: 1; background: var(--ink); color: var(--on-focus); transform: scale(1.1); box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+.chip svg { width: 32px; height: 32px; }
+.chip.tg svg { width: 30px; height: 30px; }
+.tgl { width: 46px; height: 26px; border-radius: 13px; background: rgba(236,242,248,.35); position: relative; margin-left: 2px; }
+.tgl::after { content: ""; position: absolute; top: 3.6px; left: 3.6px; width: 18.8px; height: 18.8px; border-radius: 50%; background: #fff; }
+.chip.on .tgl { background: #78828e; }
+.tgl.yes, .chip.on .tgl.yes { background: var(--ok); }
+.tgl.yes::after { left: auto; right: 3.6px; }
+.clock { font-size: 44px; font-weight: 600; letter-spacing: -.02em; margin-left: 12px; font-variant-numeric: tabular-nums; }
+.day { font-size: 24px; font-weight: 500; margin-left: 2px; }
+svg.i { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.wx { position: absolute; right: 96px; bottom: 580px; width: 520px; padding: 28px 32px; border-radius: 28px;
+  background: rgba(12,17,23,.42); box-shadow: inset 0 0 0 1px var(--edge); }
+.wx-now { display: flex; align-items: center; }
+.wx-now svg { width: 64px; height: 64px; margin-right: 20px; stroke-width: 1.4; }
+.wx-t { font-size: 72px; font-weight: 600; letter-spacing: -.04em; line-height: 1; margin-right: 20px; }
+.wx-city { font-size: 24px; font-weight: 600; }
+.wx-l { font-size: 21px; color: var(--soft); margin-top: 5px; }
+.wx-h { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--edge); text-align: center; }
+.wx-h span { display: block; font-size: 18px; color: var(--soft); }
+.wx-h b { display: block; font-size: 24px; font-weight: 600; margin-top: 6px; }
+
+.rows { position: absolute; inset: 0; z-index: 0; }
+.rows.low { transform: translateY(-250px); }
+.more-label { position: absolute; left: 96px; top: 844px; font-size: 24px; font-weight: 500; color: var(--soft); }
+.tile { position: absolute; border-radius: 26px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,.35); display: grid; place-items: center; color: #fff; }
+.tile.s { border-radius: 22px; }
+.tile.f { transform: translateY(-6px) scale(1.14); box-shadow: 0 24px 48px rgba(0,0,0,.55); z-index: 2; }
+.tile.mv { transform: scale(1.18); box-shadow: 0 0 0 4px var(--ink), 0 30px 60px rgba(0,0,0,.6); z-index: 3; }
+.mark { font-weight: 600; letter-spacing: -.02em; text-align: center; line-height: 1.05; padding: 0 14px; }
+.mark small { display: block; font-size: .5em; font-weight: 500; opacity: .85; margin-top: 6px; }
+.badge { position: absolute; top: 10px; right: 10px; height: 44px; min-width: 44px; padding: 0 12px; border-radius: 22px; background: var(--ink); color: var(--on-focus);
+  font-size: 24px; font-weight: 600; display: grid; place-items: center; }
+.tname { position: absolute; font-weight: 500; white-space: nowrap; }
+.tip { position: absolute; right: 96px; bottom: 44px; font-size: 22px; font-weight: 500; color: var(--soft); }
+
+.dim { position: absolute; inset: 0; background: rgba(5,8,12,.59); }
+.menu { position: absolute; left: 680px; width: 560px; top: 50%; transform: translateY(-50%); padding: 16px; border-radius: 26px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--edge); display: flex; flex-direction: column; }
+.menu h3 { font-size: 28px; font-weight: 600; margin: 12px 0 6px 18px; }
+.menu .lead { font-size: 20px; color: var(--soft); margin: 0 0 16px 18px; }
+.side { position: absolute; top: 0; right: 0; bottom: 0; width: 660px; padding: 64px 48px; background: var(--panel); display: flex; flex-direction: column; overflow: hidden; }
+.side h3 { font-size: 38px; font-weight: 600; margin: 0 0 6px; }
+.side .lead { font-size: 22px; color: var(--soft); margin: 0 0 16px; }
+.head { font-size: 20px; font-weight: 600; color: var(--soft); margin: 22px 0 8px 24px; }
+.item { height: 68px; flex: none; padding: 0 24px; margin-bottom: 6px; border-radius: 16px; display: flex; align-items: center; gap: 18px; font-size: 25px; font-weight: 500; }
+.item .lab { flex: 1; white-space: nowrap; overflow: hidden; }
+.item .val { font-size: 23px; font-weight: 400; color: var(--soft); white-space: nowrap; }
+.item.on { background: var(--ink); color: var(--on-focus); }
+.item.on .val { color: #45505c; }
+.ava { width: 48px; height: 48px; border-radius: 50%; flex: none; display: grid; place-items: center; color: #fff; font-weight: 600; font-size: 22px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.tab { height: 56px; padding: 0 22px; border-radius: 28px; display: grid; place-items: center; font-size: 23px; font-weight: 500; color: var(--soft); white-space: pre; }
+.tab.cur { color: var(--ink); background: rgba(236,242,248,.16); box-shadow: inset 0 0 0 1px rgba(236,242,248,.24); }
+.tab.on { background: var(--ink); color: var(--on-focus); box-shadow: none; }
+
+/* ---------- Предложение: значки и плотные панели ---------- */
+.dim.deep { background: rgba(5,8,12,.72); }
+.menu.solid, .side.solid { background: #1a222b; box-shadow: inset 0 0 0 1px rgba(236,242,248,.10), 0 30px 80px rgba(0,0,0,.55); }
+.side.solid { box-shadow: inset 1px 0 0 rgba(236,242,248,.10), -30px 0 80px rgba(0,0,0,.5); }
+.side.frost { background: rgba(30,38,48,.62); backdrop-filter: blur(48px) saturate(1.2); box-shadow: inset 1px 0 0 rgba(236,242,248,.12); }
+.item svg.i { width: 30px; height: 30px; flex: none; color: var(--soft); }
+.item.on svg.i { color: var(--on-focus); }
+.item.quiet .lab { color: var(--soft); }
+.item.quiet.on .lab { color: var(--on-focus); }
+.menu h3.warnh { display: flex; align-items: center; gap: 14px; }
+.menu h3.warnh svg { width: 34px; height: 34px; color: var(--warn); }
+
+/* ---------- Лист набора значков ---------- */
+figure.f.wide { grid-column: 1 / -1; }
+.icsheet { background: #10161d; border-radius: 10px; box-shadow: 0 0 0 1px var(--page-line); padding: 28px; display: flex; flex-direction: column; gap: 28px; color: var(--ink); font-family: var(--font-tv); }
+.ic-top { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.ic-build { display: flex; gap: 16px; flex-wrap: wrap; }
+.ic-big { position: relative; width: 168px; height: 168px; max-width: 100%; border-radius: 12px; background: #1a222b; }
+.ic-big svg { position: absolute; inset: 12px; width: calc(100% - 24px); height: calc(100% - 24px); }
+.ic-big .ic-grid { color: rgba(236,242,248,.28); }
+.ic-big .fi { color: rgba(238,242,246,.9); }
+.ic-rules { flex: 1 1 360px; min-width: 0; margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--page-soft); }
+.ic-rules b { color: var(--page-ink); font-weight: 600; }
+.ic-group h3 { margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--page-soft); }
+.ic-cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+.ic-cell { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: #1a222b; min-width: 0; }
+.ic-pair { display: flex; gap: 8px; }
+.ic-pair span { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; }
+.ic-pair svg { width: 32px; height: 32px; }
+.ic-rest { color: var(--ink); background: rgba(236,242,248,.06); }
+.ic-focus { color: var(--on-focus); background: var(--ink); }
+.ic-name { font-size: 13px; color: var(--ink); }
+.ic-cell code { font-family: var(--font-id); font-size: 11.5px; color: var(--page-soft); }
+.item svg.fi { color: rgba(238,242,246,.88); }
+.item.on svg.fi { color: var(--on-focus); }
+.menu.frost { background: rgba(30,38,48,.62); backdrop-filter: blur(48px) saturate(1.2); box-shadow: inset 0 0 0 1px rgba(236,242,248,.12), 0 30px 80px rgba(0,0,0,.5); }
+.menu h3.warnh svg.fi { color: var(--warn); }
+
+/* ---------- Предложение: новости ---------- */
+.wg { position: absolute; bottom: 580px; height: 362px; padding: 22px 26px; border-radius: 28px; background: rgba(12,17,23,.42); box-shadow: inset 0 0 0 1px var(--edge); }
+.wg.f { background: rgba(238,242,246,.96); color: var(--on-focus); transform: scale(1.03); box-shadow: 0 24px 48px rgba(0,0,0,.5); }
+.wg.f .news-h span, .wg.f .nm { color: #45505c; }
+.news-h { display: flex; align-items: baseline; justify-content: space-between; }
+.news-h b { font-size: 24px; font-weight: 600; }
+.news-h span { font-size: 18px; color: var(--soft); }
+.nl { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.nl li { display: grid; grid-template-columns: 74px 1fr; gap: 14px; }
+.nm { font-size: 17px; line-height: 23px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.nn { font-size: 19px; font-weight: 500; line-height: 23px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wxi { display: flex; flex-direction: column; height: 100%; }
+.wxi .wx-now svg { width: 56px; height: 56px; margin-right: 16px; }
+.wxi .wx-t { font-size: 64px; }
+.wxi .wx-h { margin-top: auto; }
+.nwi { flex-direction: column; align-items: flex-start; gap: 6px; }
+.nwi .lab { font-size: 23px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.nwi.on .lab { -webkit-line-clamp: 4; }
+.nwi .val { font-size: 18px; }
+.nwi .nd { font-size: 20px; font-weight: 400; line-height: 1.4; color: #45505c; }
+.topbar.wide { left: 96px; }
+.tick { flex: 1; min-width: 0; margin-right: 10px; height: 68px; border-radius: 34px; display: flex; align-items: center; gap: 18px; padding: 0 8px 0 26px;
+  background: rgba(12,17,23,.42); box-shadow: inset 0 0 0 1px var(--edge); overflow: hidden; }
+.tick.f { background: var(--ink); color: var(--on-focus); transform: scale(1.04); box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+.tick-l { font-size: 22px; font-weight: 600; flex: none; display: flex; align-items: center; gap: 10px; }
+.tick-l i { width: 10px; height: 10px; border-radius: 50%; background: var(--warn); }
+.tick-w { flex: 1; min-width: 0; overflow: hidden; height: 100%; display: flex; align-items: center;
+  align-items: flex-start; }
+.tick-r { display: flex; flex-direction: column; animation: flip 40s cubic-bezier(.4,0,.2,1) infinite; }
+.tick.f .tick-r { animation-play-state: paused; }
+.tick-i { height: 68px; flex: none; display: flex; align-items: center; gap: 18px; padding-right: 18px; }
+.tick-i span { flex: 1; min-width: 0; font-size: 20px; font-weight: 500; line-height: 24px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tick-i em { flex: none; font-style: normal; font-size: 18px; color: var(--soft); font-variant-numeric: tabular-nums; }
+.tick.f .tick-i em { color: #45505c; }
+@keyframes flip { 0.00% { transform: translateY(0px); } 18.40% { transform: translateY(0px); } 20.00% { transform: translateY(-68px); } 38.40% { transform: translateY(-68px); } 40.00% { transform: translateY(-136px); } 58.40% { transform: translateY(-136px); } 60.00% { transform: translateY(-204px); } 78.40% { transform: translateY(-204px); } 80.00% { transform: translateY(-272px); } 98.40% { transform: translateY(-272px); } 100% { transform: translateY(-340px); } }
+@media (prefers-reduced-motion: reduce) { .tick-r { animation: none; } }
+.tick.brk { background: rgba(235,87,87,.16); box-shadow: inset 0 0 0 1.5px rgba(235,87,87,.75); }
+.brk-l { flex: none; background: var(--rec); color: #fff; font-size: 17px; font-weight: 600; letter-spacing: .08em; padding: 6px 12px; border-radius: 999px; }
+.tick.brk .tick-i em { color: var(--warn); }
+.bn { position: absolute; top: 48px; left: 50%; transform: translateX(-50%); width: 1120px; padding: 24px 30px 22px; border-radius: 26px;
+  background: rgba(18,24,31,.95); box-shadow: inset 0 0 0 1.5px rgba(235,87,87,.75), 0 30px 60px rgba(0,0,0,.55); display: flex; flex-direction: column; gap: 12px; }
+.bn-top { display: flex; align-items: center; gap: 16px; font-size: 20px; color: var(--warn); }
+.bn h4 { margin: 0; font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
+.bn-k { display: flex; gap: 26px; font-size: 20px; color: var(--soft); }
+.bn-k b { color: var(--ink); font-weight: 600; }
+.item.pin .lab::before { content: "СРОЧНО"; font-size: 15px; font-weight: 600; letter-spacing: .08em; color: #fff; background: var(--rec); padding: 3px 9px; border-radius: 999px; margin-right: 12px; vertical-align: 3px; }
+/* Карточка новостей рядом с погодой: обе 460 × 300, одна новость, плавная смена раз в 8 с */
+.ncmode .wx { width: 460px; height: 300px; display: flex; flex-direction: column; }
+.ncmode .wx .wx-h { margin-top: auto; }
+.nc { position: absolute; right: 576px; bottom: 580px; width: 460px; height: 300px; padding: 26px 30px; border-radius: 28px;
+  background: rgba(12,17,23,.42); box-shadow: inset 0 0 0 1px var(--edge); display: flex; flex-direction: column; }
+.nc.f { background: rgba(238,242,246,.96); color: var(--on-focus); transform: scale(1.04); box-shadow: 0 24px 48px rgba(0,0,0,.5); }
+.nc.brk { box-shadow: inset 0 0 0 1.5px rgba(235,87,87,.75); background: rgba(40,14,18,.55); }
+.nc-h { display: flex; align-items: center; justify-content: space-between; font-size: 24px; font-weight: 600; }
+.nc-h em { font-style: normal; font-size: 18px; font-weight: 400; color: var(--soft); }
+.nc.f .nc-h em, .nc.f .nc-s { color: #45505c; }
+.nc-st { position: relative; flex: 1; margin-top: 16px; }
+.nc-it { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; opacity: 0; animation: ncfade 48s ease-in-out infinite; }
+.nc-it.day { animation-name: ncday; }
+.day-l { align-self: flex-start; font-size: 16px; font-weight: 600; letter-spacing: .06em; padding: 4px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1.5px rgba(236,242,248,.55); }
+.nc.f .day-l { box-shadow: inset 0 0 0 1.5px rgba(15,20,26,.5); }
+.nc-it.day b { font-size: 28px; -webkit-line-clamp: 3; }
+.nc-it b { font-size: 26px; font-weight: 600; line-height: 1.28; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.nc-s { font-size: 18px; color: var(--soft); }
+.nc.f .nc-it, .nc.brk .nc-it { animation: none; opacity: 0; }
+.nc.f .nc-it:first-child, .nc.brk .nc-it:first-child { opacity: 1; }
+.nc-dots { display: flex; gap: 8px; }
+.nc-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(236,242,248,.25); animation: ncdot 48s step-end infinite; }
+.nc-dots i:first-child { animation-name: ncdotday; }
+.nc.f .nc-dots i { background: rgba(15,20,26,.2); animation: none; }
+.nc.f .nc-dots i:first-child { background: var(--on-focus); }
+@keyframes ncday { 0% { opacity: 0; transform: translateY(14px); } 1.3% { opacity: 1; transform: none; } 32% { opacity: 1; transform: none; } 33.3% { opacity: 0; transform: translateY(-14px); } 100% { opacity: 0; } }
+@keyframes ncfade { 0% { opacity: 0; transform: translateY(14px); } 1.3% { opacity: 1; transform: none; } 15.4% { opacity: 1; transform: none; } 16.7% { opacity: 0; transform: translateY(-14px); } 100% { opacity: 0; } }
+@keyframes ncdot { 0% { background: var(--ink); } 16.7% { background: rgba(236,242,248,.25); } }
+@keyframes ncdotday { 0% { background: var(--ink); } 33.3% { background: rgba(236,242,248,.25); } }
+@media (prefers-reduced-motion: reduce) { .nc-it { animation: none; } .nc-it:first-child { opacity: 1; } .nc-dots i { animation: none; } }
+/* ---------- Предложение: цельная панель кнопок ---------- */
+.tbu { display: flex; align-items: center; gap: 4px; height: 80px; padding: 6px; border-radius: 40px; background: rgba(12,17,23,.5); box-shadow: inset 0 0 0 1px var(--edge); }
+.tbu .b { height: 68px; min-width: 68px; padding: 0 18px; border-radius: 34px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 25px; font-weight: 500; color: var(--ink); }
+.tbu .b svg { width: 32px; height: 32px; }
+.tbu .b.ic { padding: 0; }
+.tbu .b.on { background: var(--ink); color: var(--on-focus); }
+.tbu .b.vpn-on svg { color: var(--ok); }
+.tbu .b.vpn-on.on svg { color: #1f8a4c; }
+.tbu .sep { width: 1px; height: 34px; background: var(--edge); margin: 0 4px; }
+.tbu-wrap { position: absolute; top: 40px; right: 96px; display: flex; align-items: center; gap: 24px; }
+.hsplit { display: grid; grid-template-columns: 330px 1px 1fr; gap: 26px; height: 100%; }
+.hsplit > i { background: var(--edge); }
+.item.wrap { height: auto; min-height: 68px; padding-block: 14px; align-items: baseline; }
+.item.wrap .lab { white-space: normal; line-height: 1.3; }
+.brief { margin-top: 18px; padding: 22px 24px; border-radius: 18px; background: rgba(236,242,248,.07); display: flex; flex-direction: column; gap: 10px; }
+.brief b { font-size: 26px; font-weight: 600; line-height: 1.25; }
+.brief p { margin: 0; font-size: 22px; line-height: 1.45; color: var(--soft); }
+.brief span { font-size: 18px; color: var(--soft); }
+.toast { position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%); padding: 18px 30px; border-radius: 18px; font-size: 26px; font-weight: 500; white-space: nowrap;
+  background: rgba(20,27,35,.95); box-shadow: inset 0 0 0 1px var(--edge); }
+
+/* Поверх чужого приложения: условный кадр фильма */
+.video { position: absolute; inset: 0;
+  background: radial-gradient(60% 70% at 70% 35%, hsl(205 40% 38%), transparent 70%), radial-gradient(50% 60% at 20% 80%, hsl(28 30% 30%), transparent 70%), hsl(215 30% 10%); }
+.video::after { content: "Кадр приложения, поверх которого всплывает окно"; position: absolute; left: 96px; top: 64px; font-size: 22px; color: rgba(255,255,255,.45); }
+.stack { position: absolute; right: 72px; bottom: 64px; width: 500px; display: flex; flex-direction: column; gap: 10px; }
+.card { display: flex; align-items: center; padding: 18px 24px 18px 22px; border-radius: 24px; background: rgba(18,24,31,.88); box-shadow: inset 0 0 0 1px var(--edge); }
+.card.on { background: rgba(238,242,246,.96); color: var(--on-focus); }
+.card .ava { width: 56px; height: 56px; font-size: 24px; margin-right: 16px; }
+.card .tx { flex: 1; min-width: 0; }
+.card .nm { font-size: 26px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .pv { font-size: 23px; color: var(--soft); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.on .pv { color: #45505c; }
+.glyph { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; margin-left: 8px; flex: none; }
+.glyph svg { width: 22px; height: 22px; }
+.glyph.fill { background: var(--on-focus); color: var(--ink); margin-left: 12px; }
+.glyph.line { box-shadow: inset 0 0 0 2px rgba(15,20,26,.35); color: var(--on-focus); }
+
+/* Экран ответа */
+.rdim { position: absolute; inset: 0; background: rgba(0,0,0,.59); }
+.reply { position: absolute; left: 510px; width: 900px; top: 50%; transform: translateY(-50%); padding: 44px 48px 40px; border-radius: 32px;
+  background: rgba(18,24,31,.95); box-shadow: inset 0 0 0 1px var(--edge); display: flex; flex-direction: column; align-items: center; }
+.who { display: flex; align-items: center; }
+.who .ava { width: 72px; height: 72px; font-size: 30px; margin-right: 20px; }
+.who-l { font-size: 24px; font-weight: 500; color: var(--soft); }
+.who-n { font-size: 40px; font-weight: 600; margin-top: 6px; min-width: 400px; }
+.msgs { align-self: stretch; margin-top: 26px; display: flex; flex-direction: column; gap: 10px; }
+.msg { padding: 16px 24px; border-radius: 18px; background: rgba(236,242,248,.08); }
+.msg .snd { font-size: 22px; font-weight: 600; color: var(--soft); }
+.msg .t { font-size: 30px; line-height: 1.3; }
+.msg .t.hid { color: var(--soft); font-weight: 500; }
+.btnrow { display: flex; justify-content: center; align-items: center; margin-top: 30px; }
+.rb { width: 92px; height: 92px; border-radius: 50%; margin: 0 10px; display: grid; place-items: center; background: rgba(236,242,248,.11); }
+.rb svg { width: 38px; height: 38px; }
+.rb.on { background: var(--ink); color: var(--on-focus); }
+.pb { height: 92px; padding: 0 36px 0 30px; border-radius: 46px; display: flex; align-items: center; gap: 14px; font-size: 28px; font-weight: 600; background: rgba(236,242,248,.11); margin-right: 14px; }
+.pb svg { width: 34px; height: 34px; }
+.pb.on { background: var(--ink); color: var(--on-focus); }
+.cap { font-size: 24px; font-weight: 500; margin-top: 16px; min-height: 29px; }
+.micc { width: 132px; height: 132px; border-radius: 50%; background: #45505c; margin-top: 30px; display: flex; align-items: center; justify-content: center; gap: 6.6px; }
+.micc.rec { background: var(--rec); }
+.micc i { width: 9.2px; border-radius: 5px; background: #fff; }
+.recl { font-size: 24px; font-weight: 600; color: var(--rec); margin-top: 16px; min-height: 29px; }
+.say { font-size: 30px; font-weight: 500; color: var(--soft); margin-top: 26px; }
+.heard { font-size: 42px; font-weight: 500; text-align: center; max-width: 800px; margin-top: 18px; line-height: 1.25; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Лаунчер Mi TV — все состояния экранов</h1>
+    <p>Кадры повторяют то, что сейчас рисует приложение <code style="font-family:var(--font-id)">ru.nikita.tvhome</code>: размеры, цвета и тексты взяты из кода. Плитки приложений условные — на телевизоре вместо них баннеры самих приложений. Чтобы поправить экран, назовите его номер, например «Г-3: поднять ряд выше».</p>
+    <nav class="toc" id="toc" aria-label="Разделы"></nav>
+  </header>
+  <div id="board"></div>
+  <footer class="note">Сверено с кодом 21 октября 2026. Файл макетов лежит в проекте: <code style="font-family:var(--font-id)">~/projects/mitv-launcher/design/states.html</code>. При изменении интерфейса правится и этот файл.</footer>
+</div>
+
+<script>
+// ---------- Значки (как в IconView, Art.kt) ----------
+const I = {
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.8"/>' + [0,45,90,135,180,225,270,315].map(a => `<path transform="rotate(${a} 12 12)" d="M12 3v2.5"/>`).join(""),
+  screen: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 21h8"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 13V9M12 13l3 1.5M10 2.5h4"/>',
+  plane: '<path d="M21 3.5L2.8 10.6l6.8 2.8 2.8 7.2zM9.6 13.4L21 3.5"/>',
+  cloud: '<path d="M6.5 19h11a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.8A3.6 3.6 0 0 0 6.5 19z"/>',
+  eye: '<path d="M2 12q10-9 20 0q-10 9-20 0z"/><circle cx="12" cy="12" r="3.2"/>',
+  eyeoff: '<path d="M2 12q10-9 20 0q-10 9-20 0z"/><path d="M4 20L20 4"/>',
+  mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11q0 6.5 6.5 6.5t6.5-6.5M12 17.5V21"/>',
+  open: '<path d="M10 5H5v14h14v-5M12 12l8-8M14 4h6v6"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  play: '<path d="M8 5.5v13l10.5-6.5z"/>',
+  move: '<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>',
+  rowdown: '<rect x="3" y="15" width="18" height="5" rx="1.5"/><path d="M12 3v8M8.5 7.5L12 11l3.5-3.5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/>',
+  power: '<path d="M12 3v8"/><path d="M6.6 6.6a7.5 7.5 0 1 0 10.8 0"/>',
+  chipm: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/>',
+  sweep: '<path d="M4 20l7-7M9 11l4 4M13 15l-2 5-7-7 5-2z"/><path d="M15 3l1 2.5L18.5 6.5 16 7.5 15 10l-1-2.5L11.5 6.5 14 5.5z"/>',
+  disk: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+  shield: '<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/>',
+  wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.3a9.5 9.5 0 0 1 13 0M8.6 15.5a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19" r=".6"/>',
+  warn: '<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.3v.1"/>',
+};
+I.send = I.plane;
+const icoLine = k => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg>`;
+
+// ---------- Свой набор залитых значков «Полка» ----------
+// Сетка 24, живое поле 20 (отступ 2). f — залитые формы (мягкие углы: заливка + обводка 1,5 тем же цветом),
+// c — вырезы (на телевизоре: saveLayer + CLEAR), o — детали поверх выреза.
+// Набор «Полка» 2: поле 2–22, мягкая обводка 2,4 (наименьший радиус угла 1,2), рисунок ужат до 0,951,
+// линии деталей 2,2, самостоятельные знаки 3,4, прорези 1,8, радиусы 4 и 1,5, вес 30–45 %.
+const T9 = 'transform="translate(1.8 1.8) scale(.85)"';
+const FI = {
+  play:    { n: "Открыть", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<path d="M10.4 9v6l4.7-3z" stroke-width="2.2"/>' },
+  move:    { n: "Переместить", f: '<rect x="2.75" y="5.25" width="18.5" height="13.5" rx="2.8"/>', c: '<path d="M7 12h10M9.4 9.4L6.8 12l2.6 2.6M14.6 9.4l2.6 2.6-2.6 2.6" fill="none" stroke-width="1.8"/>' },
+  rowdown: { n: "Убрать из ряда", f: '<rect x="2.75" y="2.75" width="18.5" height="6.2" rx="2.5"/><path d="M12 11.6v4.4" fill="none" stroke-width="2.2"/><path d="M8.4 15.6L12 20.4l3.6-4.8z"/>' },
+  rowup:   { n: "В главный ряд", f: '<rect x="2.75" y="2.75" width="18.5" height="6.2" rx="2.5"/><path d="M12 20.6v-4.4" fill="none" stroke-width="2.2"/><path d="M8.4 16.6L12 11.8l3.6 4.8z"/>' },
+  eye:     { n: "Показать", f: '<path d="M12 5.6C7.2 5.6 4 9.5 2.9 12c1.1 2.5 4.3 6.4 9.1 6.4s8-3.9 9.1-6.4C20 9.5 16.8 5.6 12 5.6z"/>', c: '<circle cx="12" cy="12" r="4.1" stroke="none"/>', o: '<circle cx="12" cy="12" r="2.1" stroke="none"/>' },
+  eyeoff:  { n: "Скрыть", f: '<path d="M12 5.6C7.2 5.6 4 9.5 2.9 12c1.1 2.5 4.3 6.4 9.1 6.4s8-3.9 9.1-6.4C20 9.5 16.8 5.6 12 5.6z"/>', c: '<circle cx="12" cy="12" r="4.1" stroke="none"/><path d="M4 4l16 16" fill="none" stroke-width="5.8"/>', o: '<circle cx="12" cy="12" r="2.1" stroke="none"/><path d="M4.1 4.1l15.8 15.8" fill="none" stroke-width="2.2"/>' },
+  info:    { n: "О приложении", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<rect x="10.9" y="10.6" width="2.2" height="6.2" rx="1.1" stroke="none"/><circle cx="12" cy="7.7" r="1.4" stroke="none"/>' },
+  search:  { n: "Поиск", f: '<circle cx="10.4" cy="10.4" r="6.6"/><path d="M15.6 15.6l4.5 4.5" fill="none" stroke-width="3.4"/>', c: '<circle cx="10.4" cy="10.4" r="3.5" stroke="none"/>' },
+  gear:    { n: "Настройки", f: '<circle cx="12" cy="12" r="6.2"/>' + [0,45,90,135,180,225,270,315].map(a => `<rect x="10.8" y="3.2" width="2.4" height="3.4" rx=".6" transform="rotate(${a} 12 12)"/>`).join(""), c: '<circle cx="12" cy="12" r="3.1" stroke="none"/>' },
+  screen:  { n: "Вход", f: '<rect x="2.75" y="4.25" width="18.5" height="11.25" rx="2.8"/><rect x="7.8" y="19.4" width="8.4" height=".4" rx=".2"/>', c: '<path d="M7.6 10.1h7.2M12.2 7.4l2.7 2.7-2.7 2.7" fill="none" stroke-width="1.8"/>' },
+  timer:   { n: "Таймер сна", f: '<path d="M20.4 14.5A8.6 8.6 0 1 1 9.5 3.6a9 9 0 0 0 10.9 10.9z"/>' },
+  plane:   { n: "Сообщения", f: `<path ${T9} d="M20.8 3.3L2.9 10.2c-.9.4-.9 1.4 0 1.7l4.6 1.5 1.7 5.5c.2.7 1.1.9 1.6.4l2.5-2.3 4.7 3.4c.6.5 1.5.2 1.7-.6l2.9-15.3c.2-.9-.6-1.5-1.1-1.2z"/>`, c: `<path ${T9} d="M9.6 14.6l8.2-7.6" fill="none" stroke-width="2"/>` },
+  send:    { n: "Отправить", f: '<path d="M3.4 20.2L20.8 12 3.4 3.8v6.3L14.6 12 3.4 13.9z"/>' },
+  mic:     { n: "Голос", f: '<rect x="8.4" y="2.75" width="7.2" height="11.3" rx="3.6"/><path d="M5.3 11a6.7 6.7 0 0 0 13.4 0M12 17.8v3" fill="none" stroke-width="2.2"/>' },
+  open:    { n: "Открыть в Telegram", f: '<rect x="2.75" y="6.25" width="15" height="15" rx="2.8"/>', c: '<path d="M13.8 3.6h6.6v6.6M19.9 4.1l-8 8" fill="none" stroke-width="5.8"/>', o: '<path d="M14.6 3.4h6v6M20.1 3.9l-8 8" fill="none" stroke-width="2.2"/>' },
+  close:   { n: "Отмена", f: '<path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" fill="none" stroke-width="3.4"/>' },
+  uptime:  { n: "Без перезагрузки", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<path d="M12 6.9v5.4l3.6 2.2" fill="none" stroke-width="1.8"/>' },
+  memory:  { n: "Память", f: '<rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2.2"/>' + [9.4,14.6].map(v => `<rect x="${v - .2}" y="3.2" width=".4" height="2.6" rx=".2"/><rect x="${v - .2}" y="18.2" width=".4" height="2.6" rx=".2"/><rect x="3.2" y="${v - .2}" width="2.6" height=".4" rx=".2"/><rect x="18.2" y="${v - .2}" width="2.6" height=".4" rx=".2"/>`).join(""), c: '<rect x="9.3" y="9.3" width="5.4" height="5.4" rx="1.2" stroke="none"/>', o: '<rect x="10.8" y="10.8" width="2.4" height="2.4" rx=".8" stroke="none"/>' },
+  clean:   { n: "Освободить", f: '<path d="M10.5 5.2l2.4 5.4 5.4 2.4-5.4 2.4-2.4 5.4-2.4-5.4L2.7 13l5.4-2.4z"/><path d="M18.4 2.9l1 2.1 2.1 1-2.1 1-1 2.1-1-2.1-2.1-1 2.1-1z"/>' },
+  storage: { n: "Место", f: '<path d="M4.25 6.4c0-2 3.5-3.65 7.75-3.65s7.75 1.65 7.75 3.65v11.2c0 2-3.5 3.65-7.75 3.65S4.25 19.6 4.25 17.6z"/>', c: '<path d="M4 6.9c0 2 3.6 3.4 8 3.4s8-1.4 8-3.4M4 12.4c0 2 3.6 3.4 8 3.4s8-1.4 8-3.4" fill="none" stroke-width="1.8"/>' },
+  chat:    { n: "Текст сообщений", f: '<path d="M5 4.25h14c1.25 0 2.25 1 2.25 2.25v8c0 1.25-1 2.25-2.25 2.25h-8.4l-4.6 3.5v-3.5H5c-1.25 0-2.25-1-2.25-2.25v-8C2.75 5.25 3.75 4.25 5 4.25z"/>', c: '<path d="M7.2 9h9.6M7.2 12.4h5.6" fill="none" stroke-width="1.8"/>' },
+  shield:  { n: "VPN", f: '<path d="M12 2.75l7.25 2.8v5.9c0 4.7-3.1 8.2-7.25 9.5-4.15-1.3-7.25-4.8-7.25-9.5v-5.9z"/>', c: '<path d="M8.6 12.1l2.4 2.4 4.4-4.8" fill="none" stroke-width="1.8"/>' },
+  wifi:    { n: "Wi-Fi", f: '<path d="M12 20.1L2.75 9.8a13.6 13.6 0 0 1 18.5 0z"/>', c: '<path d="M5.9 13.2a8.7 8.7 0 0 1 12.2 0M9.1 16.6a4.2 4.2 0 0 1 5.8 0" fill="none" stroke-width="1.8"/>' },
+  warn:    { n: "Внимание", f: '<rect x="5.1" y="5.1" width="13.8" height="13.8" rx="2.8" transform="rotate(45 12 12)"/>', c: '<rect x="10.9" y="7" width="2.2" height="6.4" rx="1.1" stroke="none"/><circle cx="12" cy="16.4" r="1.35" stroke="none"/>' },
+  news:    { n: "Новости", f: '<rect x="2.75" y="4.25" width="14.5" height="15.5" rx="2.25"/><rect x="18.4" y="8" width="2.85" height="11.75" rx="1.2"/>', c: '<rect x="5.8" y="7.4" width="8.4" height="4" rx=".6" stroke="none"/><path d="M6.2 14.6h7.6M6.2 17.1h4.8" fill="none" stroke-width="1.8"/>' },
+  update:  { n: "Обновление", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<path d="M12 7.4v7M8.9 11.6l3.1 3.1 3.1-3.1" fill="none" stroke-width="1.8"/>' },
+  sun:     { n: "Ясно", f: '<circle cx="12" cy="12" r="4.1"/>' + [0,45,90,135,180,225,270,315].map(a => `<rect x="11.6" y="3.2" width=".8" height="2.4" rx=".4" transform="rotate(${a} 12 12)"/>`).join("") },
+  cloud:   { n: "Облачно", f: `<path ${T9} d="M7 19.4h10.6a4.4 4.4 0 0 0 .5-8.8 6.2 6.2 0 0 0-11.9 1.6A3.7 3.7 0 0 0 7 19.4z"/>` },
+  rain:    { n: "Дождь", f: `<path ${T9} d="M7 14.8h10.6a4.4 4.4 0 0 0 .5-8.8 6.2 6.2 0 0 0-11.9 1.6A3.7 3.7 0 0 0 7 14.8z"/><path ${T9} d="M8 18l-.9 2.6M12 18l-.9 2.6M16 18l-.9 2.6" fill="none" stroke-width="2.6"/>` },
+};
+const FI_GROUPS = [
+  ["Меню приложения", ["play", "move", "rowdown", "rowup", "eyeoff", "info"]],
+  ["Кнопки сверху", ["plane", "search", "screen", "timer", "gear"]],
+  ["Быстрые настройки", ["uptime", "memory", "clean", "storage", "chat", "news", "shield", "wifi", "update"]],
+  ["Ответ и уведомления", ["mic", "eye", "eyeoff", "open", "close", "send", "warn"]],
+  ["Погода", ["sun", "cloud", "rain"]],
+];
+// маски вырезов — один раз на страницу
+document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${Object.entries(FI).filter(([, v]) => v.c).map(([k, v]) =>
+  `<mask id="fm-${k}" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${v.c}</g></mask>`).join("")}</defs></svg>`);
+const icoFill = k => {
+  const v = FI[k], g = (m, body) => `<g${m} fill="currentColor" stroke="currentColor" stroke-width="2.52" stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
+  return `<svg class="i fi" viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(.588 .588) scale(.951)">${g(v.c ? ` mask="url(#fm-${k})"` : "", v.f)}${v.o ? g("", v.o) : ""}</g></svg>`;
+};
+// Кадры-предложения строятся в режиме залитых значков
+let FILL = false;
+const ico = k => FILL && FI[k] ? icoFill(k) : icoLine(k);
+const filled = fn => { FILL = true; try { return fn(); } finally { FILL = false; } };
+
+// ---------- Данные примера ----------
+// hue — оттенок полки (Art.shelf из цвета баннера); g — заливка условной плитки
+const A = {
+  smart: { l: "SmartTube", k: "YouTube без рекламы", hue: 350, g: ["#2b0f14", "#c4213a"], f: ["4 ч за месяц", "Последний раз сегодня"] },
+  yt: { l: "YouTube", k: "Видео", hue: 0, g: ["#ff2b2b", "#b3000f"], f: ["22 ч за месяц", "Последний раз вчера"] },
+  zona: { l: "Zona", k: "Фильмы и сериалы", hue: 176, g: ["#0f5b57", "#19a39a"], f: ["14 ч за месяц", "Последний раз сегодня"] },
+  kp: { l: "Кинопоиск", k: "Онлайн-кинотеатр", hue: 38, g: ["#151515", "#3a2a10"], f: ["2 ч за месяц", "Последний раз 12 октября"], bad: true },
+  vk: { l: "VK Видео", k: "Видео", hue: 218, g: ["#0a3e8c", "#2a7af0"], f: ["8 ч за месяц", "Последний раз 3 октября"] },
+  more: { l: "more.tv", k: "Онлайн-кинотеатр", hue: 330, g: ["#3b0b2a", "#d1206e"], f: ["6 ч за месяц"], bad: true },
+  mts: { l: "МТС", sub: "Кион", k: "Телевидение", hue: 355, g: ["#a3001b", "#e30611"], f: ["8 мин за месяц"], bad: true },
+  amed: { l: "Amediateka", k: "Сериалы", hue: 215, g: ["#0d0d0f", "#2b2f36"], f: ["В этом месяце не открывали"], bad: true },
+  tg: { l: "Telegram", k: "Мессенджер", hue: 200, g: ["#1f8fd6", "#3fb0f0"], f: ["3 ч за месяц", "Последний раз сегодня"], tg: true },
+  v2: { l: "v2rayTun", k: "VPN", hue: 205, g: ["#1d2a36", "#35546e"], f: ["Последний раз 18 октября"] },
+  play: { l: "Google Play", k: "Магазин приложений", hue: 150, g: ["#e9eef3", "#c9d3dd"], ink: "#1b2530", f: ["14 мин за месяц"] },
+  xplore: { l: "X-plore", k: "Файлы", hue: 95, g: ["#2d3a1d", "#56702f"], f: ["5 мин за месяц"] },
+  live: { l: "Live TV", k: "Эфирное телевидение", hue: 215, g: ["#1e63d6", "#3d8bff"], f: ["В этом месяце не открывали"] },
+  music: { l: "YouTube Music", k: "Музыка", hue: 0, g: ["#1a1a1a", "#3a0d0d"], f: ["В этом месяце не открывали"] },
+  player: { l: "Медиаплеер", k: "Видео", hue: 248, g: ["#4c3fd1", "#7b6cff"], f: ["В этом месяце не открывали"] },
+  set: { l: "Настройки", k: "Настройки", hue: 210, g: ["#2a323b", "#47525e"], f: ["В этом месяце не открывали"] },
+};
+const MAIN = ["smart", "yt", "zona", "kp", "vk", "more", "mts", "amed"];
+const MORE = ["tg", "v2", "play", "xplore", "live", "music", "player", "set"];
+const CHATS = [
+  { n: "Мама", c: 2, kind: 0, hue: 330, h: [[null, "Ты сегодня во сколько будешь?"], [null, "Купи хлеба по дороге"]], t: "21:12" },
+  { n: "Работа — штаб", c: 3, kind: 1, hue: 140, h: [["Олег", "Отчёт выложил в папку"], ["Ира", "Завтра планёрка в 10"], ["Олег", "Кто берёт протокол?"]], t: "20:58" },
+  { n: "Сергей", c: 0, kind: 0, hue: 30, h: [[null, "Ок, тогда в субботу"]], t: "19:40" },
+  { n: "Москва 24", c: 1, kind: 2, hue: 210, h: [[null, "На МЦД-2 изменится расписание с 25 октября"]], t: "18:05" },
+];
+
+// ---------- Главный экран ----------
+function shelfArt(hue) {
+  const h1 = (hue + 22) % 360;
+  return `<div class="art" style="background:
+    radial-gradient(380px 380px at 1400px 180px, hsla(${hue} 75% 58% / .55), transparent),
+    radial-gradient(300px 300px at 1760px 520px, hsla(${h1} 75% 46% / .5), transparent),
+    radial-gradient(260px 260px at 840px 80px, hsla(${h1} 70% 32% / .45), transparent),
+    radial-gradient(220px 220px at 1120px 600px, hsla(${hue} 70% 40% / .45), transparent),
+    hsl(${hue} 30% 9%)"></div>`;
+}
+function tile(id, big, x, y, st = {}) {
+  const a = A[id], w = big ? 300 : 220, h = big ? 180 : 132;
+  const cls = "tile" + (big ? "" : " s") + (st.f ? " f" : "") + (st.mv ? " mv" : "");
+  const badge = a.tg && st.unread ? `<span class="badge">${st.unread}</span>` : "";
+  let out = `<div class="${cls}" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:linear-gradient(145deg,${a.g[0]},${a.g[1]});${a.ink ? `color:${a.ink}` : ""}">
+    <span class="mark" style="font-size:${big ? 40 : 28}px">${a.l}${a.sub ? `<small>${a.sub}</small>` : ""}</span>${badge}</div>`;
+  if (st.f && !st.mv) out += `<div class="tname" style="left:${x}px;top:${y + h + 30}px;font-size:${big ? 26 : 22}px">${a.l}</div>`;
+  return out;
+}
+function topbar(o) {
+  const f = o.top;
+  return `<div class="topbar${o.ticker ? " wide" : ""}">${o.ticker ? (o.breaking ? tickerBrk(o.tickFocus) : ticker(o.tickFocus)) : ""}
+    ${o.unread ? `<div class="chip tg${f === "tg" ? " on" : ""}">${ico("plane")}<span>${o.unread}</span></div>` : ""}
+    <div class="chip ic${f === "search" ? " on" : ""}">${ico("search")}</div>
+    <div class="chip${f === "vpn" ? " on" : ""}"><span>VPN</span><span class="tgl${o.vpn ? " yes" : ""}"></span></div>
+    <div class="chip${f === "input" ? " on" : ""}">${ico("screen")}<span>Вход</span></div>
+    <div class="chip ${o.timer ? "tm" : "ic"}${f === "timer" ? " on" : ""}">${ico("timer")}${o.timer ? `<span>${o.timer}</span>` : ""}</div>
+    <div class="chip ic${f === "gear" ? " on" : ""}">${ico("gear")}</div>
+    <span class="clock">21:20</span><span class="day">ср, 21 октября</span>
+  </div>`;
+}
+function home(o = {}) {
+  o = { row: 0, col: 1, ...o };
+  const main = o.main ?? MAIN;
+  const cur = o.top ? A[main[o.lastCol ?? 1]] : A[o.row === 0 ? main[o.col] : MORE[o.col]];
+  const low = o.row === 1 && !o.top;
+  const facts = [...cur.f.map(t => `<span class="fact">${t}</span>`)];
+  if (o.vpn && cur.bad) facts.unshift(`<span class="fact warn">Через VPN может не открыться</span>`);
+  let rows = "";
+  main.forEach((id, i) => rows += tile(id, true, 96 + i * 340, 560, { f: !o.top && o.row === 0 && o.col === i, mv: o.move && o.col === i }));
+  rows += `<div class="more-label">Ещё</div>`;
+  MORE.forEach((id, i) => rows += tile(id, false, 96 + i * 260, 890, { f: !o.top && o.row === 1 && o.col === i, unread: o.unread }));
+  const wx = o.noWx
+    ? `<div class="wx"><div class="wx-now">${ico("cloud")}<span class="wx-t">—</span><div><div class="wx-city">Москва</div><div class="wx-l">&nbsp;</div><div class="wx-l">&nbsp;</div></div></div><div class="wx-h"></div></div>`
+    : `<div class="wx"><div class="wx-now">${ico("cloud")}<span class="wx-t">+5°</span><div><div class="wx-city">Москва</div><div class="wx-l">Облачно, ощущается +2°</div><div class="wx-l">Днём +7°, ночью +2°</div></div></div>
+      <div class="wx-h">${[["22:00","+5°"],["23:00","+4°"],["00:00","+4°"],["01:00","+3°"],["02:00","+3°"]].map(([t, d]) => `<div><span>${t}</span><b>${d}</b></div>`).join("")}</div></div>`;
+  return `${shelfArt(cur.hue)}
+    <div class="stext" style="opacity:${low ? 0 : 1}"><span class="kind">${cur.k}</span><span class="title">${cur.l === "МТС" ? "МТС ТВ" : cur.l}</span><div class="facts">${facts.join("")}</div></div>
+    <div class="${o.newsCard ? "ncmode" : ""}" style="opacity:${low ? 0 : 1}">${wx}${o.newsCard ? newsCardOne(o.newsFocus, o.breaking) : ""}</div>
+    <div class="rows${low ? " low" : ""}">${rows}</div>
+    ${o.unified ? topbarU(o) : topbar(o)}
+    ${o.tip ? `<div class="tip">Удерживайте OK, чтобы переместить или скрыть приложение</div>` : ""}`;
+}
+
+// ---------- Новости (предложение) ----------
+// Пример — настоящие заголовки лент BBC, DW и Meduza за 21 октября 2026: [заголовок, время, кратко, источник]
+const NEWS = [["Мерц: Капитуляция Украины исключена, поскольку означала бы капитуляцию всех союзников Киева", "21:26", "Канцлер Германии назвал капитуляцию Украины неприемлемой для Европы и предупредил об угрозе со стороны России. По словам Фридриха Мерца, Москва ведет гибридные атаки и пытается дестабилизировать немецкое общество.", "DW"], ["Основателя издательства «Черная сотня» Дмитрия Бастракова объявили в розыск — вероятно, по делу о самовольном оставлении части", "21:08", "МВД России объявило в розыск основателя издательства «Черная сотня» и входящих в него ультраправых книжных магазинов «Листва» Дмитрия Бастракова, пишет «Медиазона».", "Meduza"], ["Макрон обвинил иностранных лидеров в использовании беспорядков во Франции в своих интересах", "20:06", "Президент Франции Эмманюэль Макрон обвинил иностранных лидеров в использовании массовых беспорядков, новая волна которых вспыхнула по всей стране в субботу, в своих предвыборных целях.", "BBC"], ["США не спешат передавать Украине оплаченные ракеты Patriot. Эксперты оценивают причины задержек и роль Европы и НАТО в этой ситуации.", "20:02", "Киев сообщает о задержках поставок ракет Patriot, уже профинансированных через механизм PURL. Стоит ли искать политические причины, и чем могут помочь Европа и НАТО? DW узнала мнение экспертов.", "DW"], ["В Москве появится «Дворец ветеранов СВО»", "20:00", "В Екатерининском парке в Мещанском районе Москвы появится Дворец ветеранов СВО, сообщил мэр столицы Сергей Собянин.", "Meduza"]];
+const newsHead = () => `<div class="news-h"><b>Новости</b><span>BBC · DW · Meduza</span></div>`;
+const newsList = () => `<ol class="nl">${NEWS.map(([t, h, , src]) => `<li><span class="nm">${h}<br>${src}</span><span class="nn">${t}</span></li>`).join("")}</ol>`;
+const wxInner = (compactDesc) => `<div class="wxi"><div class="wx-now">${ico("cloud")}<span class="wx-t">+5°</span><div><div class="wx-city">Москва</div><div class="wx-l">Облачно</div><div class="wx-l">${compactDesc}</div></div></div>
+  <div class="wx-h">${[["22:00","+5°"],["23:00","+4°"],["00:00","+4°"],["01:00","+3°"],["02:00","+3°"]].map(([t, d]) => `<div><span>${t}</span><b>${d}</b></div>`).join("")}</div></div>`;
+// два виджета: новости 600 и погода 400 рядом, одной высоты
+const twoCards = f => `<div class="wg${f ? " f" : ""}" style="right:512px;width:600px">${newsHead()}${newsList()}</div><div class="wg" style="right:96px;width:400px">${wxInner("+7° днём, +2° ночью")}</div>`;
+// один горизонтальный: погода слева, новости справа
+const hCard = f => `<div class="wg${f ? " f" : ""}" style="right:96px;width:1016px"><div class="hsplit">${wxInner("+7° днём, +2° ночью")}<i></i><div>${newsHead()}${newsList()}</div></div></div>`;
+const tickItem = ([t, h, , src]) => `<div class="tick-i"><span>${t}</span><em>${src} · ${h}</em></div>`;
+const ticker = f => `<div class="tick${f ? " f" : ""}"><span class="tick-l"><i></i>Новости</span><div class="tick-w"><div class="tick-r">${NEWS.map(tickItem).join("")}${tickItem(NEWS[0])}</div></div></div>`;
+// Срочная новость — вымышленный пример для макета
+const BRK = ["Сильное землетрясение у побережья Японии, объявлена угроза цунами", "21:42", "Толчки магнитудой 7,4 произошли у острова Хонсю. Жителей прибрежных районов просят уйти на возвышенности; данных о пострадавших пока нет.", "BBC · DW · Meduza"];
+const tickerBrk = f => `<div class="tick brk${f ? " f" : ""}"><span class="brk-l">СРОЧНО</span><div class="tick-w"><div class="tick-i"><span>${BRK[0]}</span><em>2 мин назад</em></div></div></div>`;
+const newsCardOne = (f, brk) => brk
+  ? `<div class="nc brk${f ? " f" : ""}"><div class="nc-h"><span class="brk-l">СРОЧНО</span><em>2 мин назад</em></div><div class="nc-st"><div class="nc-it"><b>${BRK[0]}</b><span class="nc-s">${BRK[3]}</span></div></div></div>`
+  : `<div class="nc${f ? " f" : ""}"><div class="nc-h"><span>Новости</span><span class="nc-dots">${NEWS.map((_, i) => `<i style="animation-delay:${i ? 8 + i * 8 : 0}s"></i>`).join("")}</span></div>
+     <div class="nc-st">${NEWS.map(([t, h, , src], i) => i === 0
+       ? `<div class="nc-it day"><span class="day-l">ГЛАВНОЕ СЕГОДНЯ</span><b>${t}</b><span class="nc-s">${src} · ${h} · пишут все три издания</span></div>`
+       : `<div class="nc-it" style="animation-delay:${8 + i * 8}s"><b>${t}</b><span class="nc-s">${src} · ${h}</span></div>`).join("")}</div></div>`;
+const breakBanner = () => `<div class="video"></div><div class="bn"><div class="bn-top"><span class="brk-l">СРОЧНО</span><span>${BRK[3]} · 2 мин назад</span></div><h4>${BRK[0]}</h4><div class="bn-k"><span>Подробнее — кнопкой <b>Домой</b></span><span>Исчезнет через 12 секунд</span></div></div>`;
+const newsPanelBrk = () => side("Новости", "BBC, DW и Meduza, обновлено в 21:44",
+  `<div class="item wrap nwi pin on"><span class="lab">${BRK[0]}</span><span class="nd">${BRK[2]}</span><span class="val">${BRK[3]} · ${BRK[1]}</span></div>` +
+  NEWS.slice(0, 4).map(([t, h, , src]) => `<div class="item wrap nwi"><span class="lab">${t}</span><span class="val">${src} · ${h}</span></div>`).join(""));
+const CHECK = `<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" style="vertical-align:middle"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// Цельная панель: одна капсула, значки внутри, VPN — щит (зелёный — включён)
+const topbarU = o => {
+  const f = o.top, b = (k, inner, cls = "") => `<span class="b ${cls}${f === k ? " on" : ""}">${inner}</span>`;
+  return `<div class="tbu-wrap"><div class="tbu">
+    ${o.unread ? b("tg", `${ico("plane")}<span>${o.unread}</span>`) + `<span class="sep"></span>` : ""}
+    ${b("search", ico("search"), "ic")}${b("vpn", ico("shield"), "ic" + (o.vpn ? " vpn-on" : ""))}${b("input", ico("screen"), "ic")}
+    ${b("timer", ico("timer") + (o.timer ? `<span>${o.timer}</span>` : ""), o.timer ? "" : "ic")}${b("gear", ico("gear"), "ic")}
+  </div><span class="clock" style="margin:0">21:20</span><span class="day" style="margin-left:-8px">ср, 21 октября</span></div>`;
+};
+const newsPanel = sel => side("Новости", "BBC, DW и Meduza, обновлено в 21:30",
+  NEWS.map(([t, h, d, src], i) => `<div class="item wrap nwi${i === sel ? " on" : ""}"><span class="lab">${t}</span>${i === sel ? `<span class="nd">${d}</span>` : ""}<span class="val">${src} · ${h}</span></div>`).join(""));
+
+// ---------- Панели ----------
+const it = (label, val = "", on = false, ava = "") => `<div class="item${on ? " on" : ""}">${ava}<span class="lab">${label}</span>${val ? `<span class="val">${val}</span>` : ""}</div>`;
+const head = t => `<div class="head">${t}</div>`;
+const menu = (title, lead, items) => `<div class="dim"></div><div class="menu"><h3>${title}</h3>${lead ? `<p class="lead">${lead}</p>` : ""}${items}</div>`;
+const iti = (icon, label, val = "", on = false, extra = "") => `<div class="item${on ? " on" : ""}${extra ? " " + extra : ""}">${icon ? ico(icon) : ""}<span class="lab">${label}</span>${val ? `<span class="val">${val}</span>` : ""}</div>`;
+const menuN = (title, lead, items, warn, kind = "solid") => `<div class="dim deep"></div><div class="menu ${kind}"><h3${warn ? ' class="warnh"' : ""}>${warn ? ico("warn") : ""}${title}</h3>${lead ? `<p class="lead">${lead}</p>` : ""}${items}</div>`;
+const sideN = (title, lead, body, kind = "solid") => `<div class="dim deep"></div><aside class="side ${kind}"><h3>${title}</h3>${lead ? `<p class="lead">${lead}</p>` : ""}${body}</aside>`;
+const settingsN = kind => sideN("Быстрые настройки", "",
+  head("Телевизор") + iti("uptime", "Работает без перезагрузки", "7 дн.", true) + iti("memory", "Свободно памяти", "412 МБ из 1,7 ГБ") + iti("clean", "Освободить память") + iti("storage", "Место", "свободно 8,1 из 12 ГБ") +
+  head("Главный экран") + iti("chat", "Текст сообщений Telegram", "скрывать") + iti("eyeoff", "Скрытые приложения", "2") + iti("news", "Новости", "по кругу") +
+  head("Сеть") + iti("shield", "VPN", "выключен") + iti("wifi", "Wi-Fi и интернет") + iti("gear", "Все настройки телевизора"), kind);
+const side = (title, lead, body) => `<div class="dim"></div><aside class="side"><h3>${title}</h3>${lead ? `<p class="lead">${lead}</p>` : ""}${body}</aside>`;
+const toast = t => `<div class="toast">${t}</div>`;
+const ava = (c, size) => `<span class="ava" style="background:hsl(${c.hue} 50% 45%)${size ? `;width:${size}px;height:${size}px` : ""}">${c.n[0]}</span>`;
+
+function messages(tab, focusTab, empty) {
+  const kinds = [0, 1, 2, -1], names = ["Личные", "Группы", "Каналы", "Все"];
+  const of = k => k < 0 ? CHATS : CHATS.filter(c => c.kind === k);
+  const tabs = names.map((n, i) => { const s = empty && i === tab ? 0 : of(kinds[i]).reduce((x, c) => x + c.c, 0); return `<span class="tab${i === tab ? " cur" : ""}${focusTab && i === tab ? " on" : ""}">${s ? `${n}  ${s}` : n}</span>`; }).join("");
+  const list = empty ? [] : of(kinds[tab]);
+  const body = list.length ? list.map((c, i) => it(c.n, c.c ? `${c.c} нов.` : c.t, !focusTab && i === 0, ava(c))).join("") : head("Здесь пока пусто");
+  return side("Сообщения", "Telegram, пока телевизор включён", `<div class="tabs">${tabs}</div>${body}`);
+}
+
+// ---------- Стопка уведомлений ----------
+function stack(sel, showText) {
+  const pv = c => showText ? c.h[c.h.length - 1].filter(Boolean).join(": ") : (c.c === 1 ? "Новое сообщение" : c.c < 5 ? `${c.c} новых сообщения` : `${c.c} новых сообщений`);
+  const cards = CHATS.slice(0, 3).map((c, i) => `<div class="card${i === sel ? " on" : ""}">${ava(c)}<div class="tx"><div class="nm">${c.n}</div><div class="pv">${pv(c)}</div></div>
+    ${i === sel ? `<span class="glyph fill">${ico("open")}</span><span class="glyph line">${ico("close")}</span>` : ""}</div>`).join("");
+  return `<div class="video"></div><div class="stack">${cards}</div>`;
+}
+
+// ---------- Экран переписки и ответа ----------
+function replyView(c, { shown = false, focus = "mic" } = {}) {
+  const msgs = c.h.map(([s, t]) => `<div class="msg">${s && s !== c.n ? `<div class="snd">${s}</div>` : ""}<div class="t${shown ? "" : " hid"}">${shown ? t : "Текст скрыт"}</div></div>`).join("");
+  const canReply = c.kind !== 2;
+  const caps = { mic: "Ответить голосом", eye: shown ? "Скрыть текст" : "Показать текст", open: "Открыть в Telegram" };
+  const btn = k => `<span class="rb${focus === k ? " on" : ""}">${ico(k === "eye" ? (shown ? "eyeoff" : "eye") : k)}</span>`;
+  return `<div class="video"></div><div class="rdim"></div><div class="reply">
+    <div class="who">${ava(c)}<div><div class="who-l">Ответ для</div><div class="who-n">${c.n}</div></div></div>
+    <div class="msgs">${msgs}</div>
+    <div class="btnrow">${canReply ? btn("mic") : ""}${btn("eye")}${btn("open")}</div>
+    <div class="cap">${caps[focus]}</div></div>`;
+}
+function replyListen(c, { stage, heard = "", msg = "", focus }) {
+  const rec = stage === "rec";
+  const bars = [.45, .75, 1, .75, .45].map(k => `<i style="height:${66 * (rec ? .18 + .62 * k * .82 : .18)}px"></i>`).join("");
+  const say = { wait: "Подождите…", rec: "Слушаю, говорите", proc: "Распознаю…", done: msg }[stage];
+  const btns = stage === "done" ? `<div class="btnrow">${heard ? `<span class="pb${focus === "send" ? " on" : ""}">${ico("send")}<span>Отправить</span></span>` : ""}
+      <span class="rb${focus === "mic" ? " on" : ""}">${ico("mic")}</span><span class="rb">${ico("close")}</span></div>
+      <div class="cap">${focus === "mic" ? "Надиктовать заново" : ""}</div>` : "";
+  return `<div class="video"></div><div class="rdim"></div><div class="reply">
+    <div class="who">${ava(c)}<div><div class="who-l">Ответ для</div><div class="who-n">${c.n}</div></div></div>
+    <div class="micc${rec ? " rec" : ""}">${bars}</div>
+    <div class="recl">${rec ? "● Идёт запись" : ""}</div>
+    <div class="say">${say}</div>
+    ${heard ? `<div class="heard">${heard}</div>` : ""}
+    ${btns}</div>`;
+}
+
+// ---------- Кадры ----------
+const MA = CHATS[0], GR = CHATS[1], CH = CHATS[3];
+const FRAMES = [
+  { g: "Главный экран", id: "Г-1", t: "Покой, первый запуск", h: home({ tip: true }),
+    when: "Лаунчер открыт, фокус на второй плитке главного ряда. VPN выключен, непрочитанных нет, таймер не задан.",
+    keys: "← → по ряду, ↓ в ряд «Ещё», ↑ к кнопкам сверху, удержание OK — меню приложения. «Назад» — в начало ряда.",
+    code: "MainActivity.buildShelf, buildRows, onTileFocus", note: "Подсказка справа внизу исчезает навсегда после первого открытия меню приложения." },
+  { g: "Главный экран", id: "Г-2", t: "VPN включён, кинотеатр в фокусе", h: home({ vpn: true, col: 3 }),
+    when: "Туннель поднят (проверка каждые 3 с), в фокусе сервис из списка «не работает через VPN».",
+    keys: "OK — окно выбора П-3.", code: "showShelf, vpnBad", note: "Первым идёт мягко-красный признак «Через VPN может не открыться», тумблер в кнопке VPN — зелёный." },
+  { g: "Главный экран", id: "Г-3", t: "Фокус в ряду «Ещё»", h: home({ row: 1, col: 0, unread: 5 }),
+    when: "Фокус ушёл вниз. Ряды поднимаются на 250 px, текст полки и погода гаснут, фон полки остаётся.",
+    keys: "↑ — назад в главный ряд на прежнюю колонку.", code: "liftRows(low = true)", note: "Здесь же видно непрочитанное: число на плитке Telegram и кнопка с самолётиком сверху." },
+  { g: "Главный экран", id: "Г-4", t: "Фокус на кнопках сверху", h: home({ top: "gear", unread: 5, timer: "45 мин" }),
+    when: "↑ из главного ряда ставит фокус на «Настройки». Кнопка в фокусе белая и увеличена в 1,1 раза, остальные полупрозрачные.",
+    keys: "← → между кнопками, ↓ — в главный ряд.", code: "buildTopbar, styleChip",
+    note: "Порядок: сообщения (только при непрочитанных), поиск, VPN, вход, таймер (с остатком, если задан), настройки, время, дата." },
+  { g: "Главный экран", id: "Г-5", t: "Кнопка VPN в фокусе", h: home({ top: "vpn", vpn: true }),
+    when: "Фокус на кнопке VPN, туннель поднят.", keys: "OK — включить или выключить через виджет v2rayTun, удержание OK — открыть v2rayTun.",
+    code: "toggleVpn, Toggle", note: "Подсказки после нажатия: «VPN включается» → через 4 с «VPN включён» (или «…выключается» → «VPN выключен»)." },
+  { g: "Главный экран", id: "Г-6", t: "Перемещение плитки", h: home({ col: 2, move: true, main: ["smart", "yt", "zona", "kp", "vk", "more", "mts", "amed"] }) + toast("Стрелками влево и вправо, OK — готово"),
+    when: "Пункт «Переместить» в меню приложения. Плитка увеличена в 1,18 раза, с белой рамкой, имя под ней скрыто.",
+    keys: "← → двигают плитку, OK или «Назад» — сохранить («Порядок сохранён»). ↑ ↓ не работают.", code: "startMove, moveBy, endMove" },
+  { g: "Главный экран", id: "Г-7", t: "Подсказка внизу и погода без сети", h: home({ noWx: true }) + toast("Кинопоиск скрыт. Вернуть — в настройках, «Скрытые приложения»"),
+    when: "Подсказка появляется на 2,4 с после действия. Погода без ответа сервера и без сохранённого ответа показывает прочерк.",
+    keys: "—", code: "toast, Weather.cached",
+    note: "Другие тексты: «Порядок сохранён», «… теперь в ряду «Ещё»», «… в главном ряду», «… снова на главном экране», «Освобождено N МБ» / «Памяти уже достаточно», «Телевизор выключится через …», «Таймер сна выключен», «Таймеру нужно разрешение: выдаётся один раз с компьютера», «Входы не найдены», «Новых сообщений нет», «Скрытых приложений нет», «Поиск недоступен на этом телевизоре», «Не удалось открыть»." },
+
+  { g: "Меню и панели", id: "П-1", t: "Меню приложения, главный ряд", h: home() + menu("YouTube", "", it("Открыть", "", true) + it("Переместить") + it("Убрать из главного ряда") + it("Скрыть") + it("О приложении")),
+    when: "Удержание OK или кнопка меню на плитке главного ряда.", keys: "↑ ↓, OK — выбрать, «Назад» — закрыть.", code: "openTileMenu, showMenu" },
+  { g: "Меню и панели", id: "П-2", t: "Меню приложения, ряд «Ещё»", h: home({ row: 1, col: 2 }) + menu("Google Play", "", it("Открыть", "", true) + it("Добавить в главный ряд") + it("Скрыть") + it("О приложении")),
+    when: "То же на плитке ряда «Ещё».", keys: "Как в П-1.", code: "openTileMenu (ri = 1)", note: "«О приложении» открывает системную карточку приложения." },
+  { g: "Меню и панели", id: "П-3", t: "Запуск кинотеатра при включённом VPN", h: home({ vpn: true, col: 3 }) + menu("Кинопоиск может не открыться", "Этот сервис обычно не работает через VPN", it("Выключить VPN и открыть", "", true) + it("Открыть через VPN") + it("Отмена")),
+    when: "OK на плитке из списка vpnBad, пока туннель поднят.", keys: "↑ ↓, OK. «Выключить VPN и открыть» ждёт 3 с и запускает приложение.", code: "launch" },
+  { g: "Меню и панели", id: "П-4", t: "Быстрые настройки", h: home({ top: "gear" }) + side("Быстрые настройки", "",
+      head("Телевизор") + it("Работает без перезагрузки", "7 дн.", true) + it("Свободно памяти", "412 МБ из 1,7 ГБ") + it("Освободить память") + it("Место", "свободно 8,1 из 12 ГБ") +
+      head("Главный экран") + it("Текст сообщений Telegram", "скрывать") + it("Скрытые приложения", "2") +
+      head("Сеть") + it("VPN", "выключен") + it("Wi-Fi и интернет") + it("Все настройки телевизора")),
+    when: "OK на шестерёнке.", keys: "↑ ↓, OK. Пункты «Свободно памяти», «Освободить память», «Текст сообщений» меняются на месте, панель не закрывается.", code: "openSettings, showPanel(side = true)",
+    note: "Панель 660 px справа; на телевизоре прокручивается, если пункты не влезают." },
+  { g: "Меню и панели", id: "П-5", t: "Скрытые приложения", h: home({ top: "gear" }) + side("Скрытые приложения", "OK возвращает приложение на главный экран", it("Кинопоиск", "", true) + it("Медиаплеер")),
+    when: "«Скрытые приложения» в настройках. Если скрытых нет — вместо панели подсказка «Скрытых приложений нет».", keys: "OK — вернуть, «Назад» — закрыть.", code: "openHidden" },
+  { g: "Меню и панели", id: "П-6", t: "Выбор входа", h: home({ top: "input" }) + side("Вход", "Откуда показывать картинку", it("HDMI 1", "", true) + it("HDMI 2") + it("HDMI 3") + it("AV")),
+    when: "OK на кнопке «Вход». Список — входы-источники телевизора с их системными названиями.", keys: "OK — переключиться на вход.", code: "openInputs" },
+  { g: "Меню и панели", id: "П-7", t: "Таймер сна", h: home({ top: "timer", timer: "45 мин" }) + side("Таймер сна", "Через сколько выключить телевизор",
+      ["15 мин", "30 мин", "45 мин", "1 ч", "1 ч 30 мин", "2 ч", "3 ч"].map((m, i) => it(m, "", i === 0)).join("") + it("Выключить таймер", "осталось 45 мин")),
+    when: "Удержание OK на кнопке таймера. Короткое нажатие перебирает 15 → 30 → 60 → 90 → 120 мин → выкл без панели.",
+    keys: "OK — задать.", code: "pickSleep, cycleSleep, Sleep", note: "За минуту до конца — системная подсказка «Телевизор выключится через минуту»." },
+  { g: "Меню и панели", id: "П-8", t: "Сообщения, вкладка «Личные»", h: home({ top: "tg", unread: 6 }) + messages(0, false),
+    when: "OK на кнопке с самолётиком. Переписки живут, пока висит их уведомление Telegram.", keys: "↑ — на вкладки, ← → между вкладками, OK на переписке — экран О-1.", code: "openMessages",
+    note: "Справа — число новых или время последнего сообщения. Без фото чата — кружок с первой буквой." },
+  { g: "Меню и панели", id: "П-9", t: "Сообщения, пустая вкладка", h: home({ top: "tg", unread: 6 }) + messages(2, true, true),
+    when: "Вкладка, где переписок нет. Фокус на вкладке.", keys: "← → — другая вкладка.", code: "openMessages (chats.isEmpty)" },
+
+  { g: "Telegram поверх приложений", id: "У-1", t: "Стопка уведомлений, текст скрыт", h: stack(0, false),
+    when: "Новое сообщение, пока открыто другое приложение (на главном экране стопки нет). До трёх свежих переписок, живёт 30 с.",
+    keys: "↑ ↓ — выбор, OK (и кнопка голоса) — экран О-1, «Назад» и любая другая кнопка — скрыть.", code: "Banner.show, Banner.paint",
+    note: "Стопка забирает фокус пульта, пока видна. У выбранной карточки справа: открыть (OK) и скрыть («Назад»)." },
+  { g: "Telegram поверх приложений", id: "У-2", t: "Стопка, текст сообщений показан", h: stack(1, true),
+    when: "В настройках включено «Текст сообщений Telegram: показывать». В группе — с именем отправителя.", keys: "Как в У-1.", code: "Chats.preview" },
+
+  { g: "Переписка и голосовой ответ", id: "О-1", t: "Просмотр, текст скрыт", h: replyView(MA),
+    when: "OK на карточке стопки или на переписке в П-8. Последние до пяти сообщений.", keys: "← → по кнопкам, ↑ — к сообщениям, «Назад» — закрыть.", code: "ReplyActivity (view = true)",
+    note: "Подпись под рядом — название кнопки в фокусе. Глаз показывает текст только в этом окне." },
+  { g: "Переписка и голосовой ответ", id: "О-2", t: "Просмотр группы, текст показан", h: replyView(GR, { shown: true, focus: "eye" }),
+    when: "Нажат глаз (или текст показывается по настройке). Над сообщением — отправитель.", keys: "OK на глазе — снова скрыть.", code: "paintMessages, setEye" },
+  { g: "Переписка и голосовой ответ", id: "О-3", t: "Канал — ответить нельзя", h: replyView(CH, { focus: "eye" }),
+    when: "Уведомление без кнопки ответа (канал). Кнопки микрофона нет, фокус на глазе.", keys: "Глаз и «Открыть в Telegram».", code: "c.reply == null" },
+  { g: "Переписка и голосовой ответ", id: "О-4", t: "Запуск микрофона", h: replyListen(MA, { stage: "wait" }),
+    when: "OK на «Ответить голосом». Распознавание ещё не готово.", keys: "«Назад» — отмена.", code: "listen" },
+  { g: "Переписка и голосовой ответ", id: "О-5", t: "Идёт запись", h: replyListen(MA, { stage: "rec", heard: "буду в восемь хлеб куплю" }),
+    when: "Микрофон слушает. Столбики в красном круге следуют громкости, промежуточный текст появляется по ходу речи.", keys: "—", code: "onReadyForSpeech, onPartialResults, LevelView" },
+  { g: "Переписка и голосовой ответ", id: "О-6", t: "Распознаётся", h: replyListen(MA, { stage: "proc", heard: "буду в восемь хлеб куплю" }),
+    when: "Речь закончилась, ждём итог распознавания.", keys: "—", code: "onEndOfSpeech" },
+  { g: "Переписка и голосовой ответ", id: "О-7", t: "Готово к отправке", h: replyListen(MA, { stage: "done", heard: "Буду в восемь, хлеб куплю.", msg: "Отправить: Мама?", focus: "send" }),
+    when: "Текст распознан, расставлены знаки препинания. Ничего не уходит без OK.", keys: "OK — отправить, → «Надиктовать заново», «Отмена».", code: "done, send, Punct.fix",
+    note: "После отправки — системная подсказка «Отправлено: Мама» или «Не удалось отправить», окно закрывается." },
+  { g: "Переписка и голосовой ответ", id: "О-8", t: "Не расслышал или ошибка", h: replyListen(MA, { stage: "done", msg: "Не расслышал. Можно надиктовать заново", focus: "mic" }),
+    when: "Пустой результат или ошибка распознавания. Кнопки «Отправить» нет, фокус на микрофоне.", keys: "OK — слушать снова.", code: "onError",
+    note: "Другие тексты на этом месте: «Нет доступа к микрофону», «Нет связи с распознаванием речи (ошибка N)», «Микрофон занят другим приложением (ошибка N)», «Распознавание не запустилось (ошибка N)», «Распознавание речи недоступно»." },
+  { g: "Предложение: свои значки и матовые панели", id: "Н-0", t: "Набор значков «Полка»", sheet: true, h: "",
+    when: "Свой набор из 29 залитых значков с мягкими углами на все места лаунчера. Слева — вид в покое, справа — в фокусе (белая плашка).",
+    keys: "—", code: "IconView: Paint.Style.FILL_AND_STROKE, вырезы — saveLayer + PorterDuff.CLEAR",
+    note: "Рисуются кодом, без картинок: ноль памяти и чёткие на любом экране." },
+  { g: "Предложение: свои значки и матовые панели", id: "П-1н", t: "Меню приложения", h: filled(() => home() + menuN("YouTube", "", iti("play", "Открыть", "", true) + iti("move", "Переместить") + iti("rowdown", "Убрать из главного ряда") + iti("eyeoff", "Скрыть") + iti("info", "О приложении"), false, "frost")),
+    when: "Сравнить с П-1. Залитые значки слева, в покое — светлые, в фокусе — тёмные. Матовая подложка, как в П-4м.",
+    keys: "Как в П-1.", code: "Item.icon уже есть в showPanel — нужны только значки в IconView",
+    note: "В ряду «Ещё» вместо «Убрать из главного ряда» — «Добавить в главный ряд» со стрелкой вверх." },
+  { g: "Предложение: свои значки и матовые панели", id: "П-3н", t: "Вопрос про VPN", h: filled(() => home({ vpn: true, col: 3 }) + menuN("Кинопоиск может не открыться", "Этот сервис обычно не работает через VPN",
+      iti("", "Выключить VPN и открыть", "", true) + iti("", "Открыть через VPN") + iti("", "Отмена", "", false, "quiet"), true, "frost")),
+    when: "Сравнить с П-3. У ответов значков нет: их читают целиком. Залитый значок предупреждения — у заголовка, «Отмена» тише двух действий.",
+    keys: "Как в П-3.", code: "launch, showPanel" },
+  { g: "Предложение: свои значки и матовые панели", id: "П-4м", t: "Быстрые настройки", h: filled(() => home({ top: "gear" }) + settingsN("frost")),
+    when: "Выбранный вариант. Экран под панелью размыт один раз при открытии (уменьшить снимок и растянуть обратно), без живого размытия.",
+    keys: "Как в П-4.", code: "снимок корневого вида в маленький Bitmap при открытии панели",
+    note: "Затемнение под панелью 72%. Цвет полки слегка окрашивает панель — так она связана с экраном." },
+  { g: "Предложение: свои значки и матовые панели", id: "Г-4н", t: "Кнопки сверху и погода", h: filled(() => home({ top: "gear", unread: 5, timer: "45 мин" })),
+    when: "Сравнить с Г-4. Те же кнопки с залитыми значками; таймер сна — луна, вход — экран со стрелкой.",
+    keys: "Как в Г-4.", code: "buildTopbar, buildWeather" },
+  { g: "Предложение: свои значки и матовые панели", id: "О-1н", t: "Переписка", h: filled(() => replyView(MA)),
+    when: "Сравнить с О-1. Кнопки ответа, показа текста и перехода в Telegram с залитыми значками.",
+    keys: "Как в О-1.", code: "ReplyActivity.roundButton" },
+  { g: "Предложение: свои значки и матовые панели", id: "О-7н", t: "Готово к отправке", h: filled(() => replyListen(MA, { stage: "done", heard: "Буду в восемь, хлеб куплю.", msg: "Отправить: Мама?", focus: "send" })),
+    when: "Сравнить с О-7. «Отправить» — стрелка-самолётик, отдельная от значка Telegram.",
+    keys: "Как в О-7.", code: "ReplyActivity.pillButton" },
+  { g: "Предложение: новости", id: "Г-8н", t: "Карточка новостей рядом с погодой", h: filled(() => home({ newsCard: true })),
+    when: "Две карточки одного размера (460 × 300): слева новости, справа погода. Видна одна новость — заголовок до четырёх строк, издание и время. Первой идёт новость дня с меткой «Главное сегодня» — о ней пишут все три издания, она держится 16 секунд. Остальные сменяются раз в 8 секунд: плавно гаснут вверх, следующая проявляется снизу. Точки — какая из пяти сейчас. В макете смена настоящая.",
+    keys: "↑ с плиток под карточкой — на неё, OK — панель П-10н.", code: "новое: News (RSS BBC, DW, Meduza раз в 30 мин) + смена раз в 8 с, анимация 0,6 с",
+    note: "Ленты из России открываются только через VPN: лаунчер должен быть в списке приложений v2rayTun, иначе показывается последняя загруженная подборка. Смена останавливается, когда лаунчер скрыт." },
+  { g: "Предложение: новости", id: "Г-8н·ф", t: "Карточка новостей в фокусе", h: filled(() => home({ newsCard: true, col: 3, newsFocus: true })).replace('class="tile f"', 'class="tile"'),
+    when: "Фокус на карточке: она белая и чуть увеличена, смена останавливается, чтобы новость можно было дочитать.", keys: "OK — панель П-10н, ↓ — обратно в ряд.", code: "—" },
+  { g: "Предложение: новости", id: "Г-8т", t: "Для сравнения: табло вверху", h: filled(() => home({ ticker: true })),
+    when: "Прежний вариант: строка слева вверху на линии кнопок, одна новость в две строки, смена снизу вверх как на табло. Погода — прежней карточкой.",
+    keys: "← с кнопки поиска — на строку, OK — панель П-10н.", code: "—" },
+  { g: "Предложение: новости", id: "П-10н", t: "Панель новостей", h: filled(() => home({ newsCard: true }) + newsPanel(0)),
+    when: "OK на карточке новостей. Пять заголовков; у выбранной раскрывается краткое описание из ленты.",
+    keys: "↑ ↓ — по новостям, описание раскрывается у выбранной. «Назад» — закрыть.", code: "showPanel(side = true), строки переменной высоты",
+    note: "Статью целиком на телевизоре читать неудобно, поэтому только заголовок и несколько фраз." },
+  { g: "Предложение: новости", id: "Г-10н", t: "Срочная новость на главном экране", h: filled(() => home({ newsCard: true, breaking: true })),
+    when: "Пришла срочная новость. Карточка перестаёт листать обычные и держит её: красная метка «СРОЧНО», красная рамка, «N мин назад». Держит, пока вы её не откроете или не пройдёт 30 минут.",
+    keys: "OK — панель П-11н.", code: "News.breaking: приоритет над очередью",
+    note: "Что считать срочным (в макете вымышленный пример): одна и та же новость в двух-трёх лентах за 20 минут или пометка «Срочно» / «Молния» в заголовке. Не чаще трёх срочных в час." },
+  { g: "Предложение: новости", id: "У-3н", t: "Срочная новость поверх фильма", h: breakBanner(),
+    when: "Срочная новость, пока открыто другое приложение. Плашка сверху по центру, чтобы не путать со стопкой Telegram справа внизу. Видео не ставится на паузу.",
+    keys: "Плашка не забирает пульт: фильм управляется как обычно. «Домой» — лаунчер, там срочная уже на карточке (Г-10н).", code: "окно поверх приложений, как Banner",
+    note: "В быстрых настройках — пункт «Срочные новости»: поверх приложений / только на главном экране / выключены. Ночью с 23:00 до 8:00 — только на главном экране." },
+  { g: "Предложение: новости", id: "П-11н", t: "Панель новостей со срочной", h: filled(() => home({ newsCard: true, breaking: true }) + newsPanelBrk()),
+    when: "Срочная закреплена первой, с меткой и раскрытым описанием; под ней обычные новости.", keys: "Как в П-10н. После открытия карточка возвращается к обычной смене.", code: "showPanel(side = true)" },
+  { g: "Предложение: новости", id: "П-12н", t: "Настройки новостей", h: filled(() => home({ top: "gear", newsCard: true }) + side("Новости", "Что и как показывать на главном экране",
+      head("Смена новостей") + it("По кругу", CHECK, true) + it("Один круг и остановиться") + it("Не листать, только новость дня") +
+      head("Срочные новости") + it("Поверх приложений", CHECK) + it("Только на главном экране") + it("Выключены") +
+      head("Карточка") + it("Скрыть новости с главного экрана"))),
+    when: "Пункт «Новости» в быстрых настройках (П-4м). Смену можно остановить, срочные — убрать с экрана поверх фильма, карточку — скрыть совсем.",
+    keys: "↑ ↓, OK — выбрать. Галочка — текущий вариант.", code: "showPanel(side = true)",
+    note: "Так устроено у Echo Show («пролистать один раз»), Fire TV («Не перебивать») и требует правило доступности WCAG 2.2.2: всё, что меняется само, можно остановить." },
+  { g: "Предложение: цельная панель кнопок", id: "Г-11н", t: "Одна капсула вместо шести кнопок", h: filled(() => home({ unified: true, newsCard: true, unread: 1, vpn: true })),
+    when: "Сравнить с нынешней панелью. Все кнопки в одной полупрозрачной капсуле, между сообщениями и остальными — тонкий разделитель. VPN — значок щита: зелёный — включён, белый — выключен. «Вход» — только значок.",
+    keys: "← → по кнопкам внутри капсулы, ↓ — на виджет под кнопкой. Удержание OK на щите — открыть v2rayTun.", code: "buildTopbar: общий фон у LinearLayout, кнопки без своих подложек",
+    note: "Так устроены верхние панели tvOS и Google TV: одна подложка, кнопки проявляются только в фокусе. Подпись «VPN» и переключатель уходят: состояние видно по цвету щита." },
+  { g: "Предложение: цельная панель кнопок", id: "Г-11н·ф", t: "Фокус на VPN", h: filled(() => home({ unified: true, newsCard: true, unread: 1, vpn: true, top: "vpn" })),
+    when: "Кнопка в фокусе — белый круг внутри капсулы, щит остаётся зелёным.", keys: "OK — включить или выключить VPN.", code: "—" },
+];
+
+function iconSheet() {
+  const grid = [...Array(25)].map((_, i) => `<path d="M${i} 0V24M0 ${i}H24"/>`).join("");
+  const big = k => `<div class="ic-big"><svg viewBox="0 0 24 24" class="ic-grid" aria-hidden="true"><g stroke="currentColor" stroke-width=".04" fill="none">${grid}</g>
+      <rect x="2" y="2" width="20" height="20" fill="none" stroke="currentColor" stroke-width=".08" stroke-dasharray=".3 .3"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width=".08"/></svg>${icoFill(k)}</div>`;
+  const cell = k => `<div class="ic-cell"><div class="ic-pair"><span class="ic-rest">${icoFill(k)}</span><span class="ic-focus">${icoFill(k)}</span></div><span class="ic-name">${FI[k].n}</span><code>${k}</code></div>`;
+  return `<div class="icsheet">
+    <div class="ic-top">
+      <div class="ic-build">${big("gear")}${big("eyeoff")}${big("shield")}</div>
+      <ul class="ic-rules">
+        <li><b>Сетка 24, живое поле 20.</b> Круг ⌀20 и квадрат 20 — опорные фигуры, пунктир — граница поля.</li>
+        <li><b>Ни одного острого угла.</b> Наименьший радиус 1,2, у крупных форм 4, у мелких 1,5.</li>
+        <li><b>Линии 2,2 и 3,4, прорези 1,8; вес 30–45 %.</b> Внутренние детали — прорезь, а не тонкая линия: читаются с трёх метров.</li>
+        <li><b>Один цвет.</b> В покое — цвет текста, в фокусе — тёмный на белом. Состояние меняет форма (глаз и перечёркнутый глаз), а не цвет.</li>
+        <li><b>Знакомые метафоры.</b> Те же, что в tvOS, Google TV и Material Symbols: учиться заново не нужно.</li>
+        <li><b>Размеры.</b> 32 в меню и кнопках сверху, 38 в кнопках ответа, 64 в погоде. Мельче 28 не используем.</li>
+      </ul>
+    </div>
+    ${FI_GROUPS.map(([g, ks]) => `<div class="ic-group"><h3>${g}</h3><div class="ic-cells">${ks.map(cell).join("")}</div></div>`).join("")}
+  </div>`;
+}
+
+// ---------- Сборка доски ----------
+const board = document.getElementById("board"), toc = document.getElementById("toc");
+const groups = [...new Set(FRAMES.map(f => f.g))];
+groups.forEach((g, gi) => {
+  const sec = document.createElement("section"); sec.className = "grp"; sec.id = "g" + (gi + 1);
+  sec.innerHTML = `<h2>${g}</h2><div class="grid"></div>`;
+  board.appendChild(sec); board.style.display = "flex"; board.style.flexDirection = "column"; board.style.gap = "56px";
+  toc.insertAdjacentHTML("beforeend", `<a href="#g${gi + 1}">${g}</a>`);
+  const grid = sec.querySelector(".grid");
+  FRAMES.filter(f => f.g === g).forEach(f => {
+    grid.insertAdjacentHTML("beforeend", `<figure class="f${f.sheet ? " wide" : ""}" id="${f.id.replace("-", "")}">
+      <div class="f-head"><span class="f-id">${f.id}</span><span class="f-title">${f.t}</span></div>
+      ${f.sheet ? iconSheet() : `<div class="tv"><div class="scr" role="img" aria-label="${f.t}">${f.h}</div></div>`}
+      <figcaption><b>Когда</b><span>${f.when}</span><b>Пульт</b><span>${f.keys}</span>${f.note ? `<b>Важно</b><span>${f.note}</span>` : ""}<b>Код</b><code>${f.code}</code></figcaption>
+    </figure>`);
+  });
+});
+function fit() { document.querySelectorAll(".tv").forEach(tv => tv.firstElementChild.style.transform = `scale(${tv.clientWidth / 1920})`); }
+new ResizeObserver(fit).observe(board); fit();
+</script>

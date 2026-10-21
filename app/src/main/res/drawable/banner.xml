@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Баннер самого лаунчера 320×180: графитовая плитка с белым домиком -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp" android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#1A2330" android:pathData="M0,0h320v180h-320z" />
+    <path android:strokeColor="#EEF2F6" android:strokeWidth="8" android:strokeLineJoin="round"
+        android:pathData="M120,96 L160,62 L200,96 L200,130 L120,130 Z" />
+</vector>

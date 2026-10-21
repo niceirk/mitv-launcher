@@ -1,0 +1,230 @@
+<title>Значки «Полка»</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Витрина набора: крупные карточки значков на тёмном «телевизорном» фоне, переключатели сетки и вида, внизу — значки в настоящем размере в строках меню.
+   Страница намеренно тёмная: так значки выглядят как на экране телевизора. */
+:root {
+  color-scheme: dark;
+  --page: #080b0f;
+  --card: #141b22;
+  --card-hi: #1a222b;
+  --line: #222b35;
+  --ink: #eef2f6;
+  --soft: #8d99a6;
+  --on-focus: #0f141a;
+  --warn: #f0a4a4;
+  --font: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+body { background: var(--page); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 72px; }
+.wrap { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+h1 { margin: 0; font-size: 34px; font-weight: 600; letter-spacing: -.02em; text-wrap: balance; }
+.sub { margin: 0; color: var(--soft); max-width: 72ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; padding: 12px 0; background: var(--page); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--page); }
+.seg { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+.seg button { font: 500 14px var(--font); color: var(--soft); background: none; border: 0; padding: 7px 16px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-focus); }
+.seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.bar .lbl { font-size: 13px; color: var(--soft); margin-left: 6px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+.rule { background: var(--card); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.rule b { font-weight: 600; }
+.rule span { color: var(--soft); font-size: 14px; }
+section { display: flex; flex-direction: column; gap: 14px; }
+h2 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--soft); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 196px), 1fr)); gap: 14px; }
+.card { background: var(--card); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.stage { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 12px; background: var(--card-hi); color: var(--ink); display: grid; place-items: center; transition: background .2s, color .2s; }
+.focus .stage { background: var(--ink); color: var(--on-focus); }
+.stage svg { width: 62%; height: 62%; }
+.stage .grid { position: absolute; width: 62%; height: 62%; color: rgba(236,242,248,.3); display: none; }
+.focus .stage .grid { color: rgba(15,20,26,.25); }
+.showgrid .stage .grid { display: block; }
+.sizes { display: flex; align-items: flex-end; gap: 10px; color: var(--ink); }
+.sizes span { display: grid; place-items: center; border-radius: 8px; }
+.sizes svg { display: block; }
+.meta { display: flex; flex-direction: column; gap: 2px; }
+.meta .n { font-weight: 600; }
+.meta code { font-family: var(--mono); font-size: 12px; color: var(--soft); }
+.meta .u { font-size: 13px; color: var(--soft); }
+.demo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.panel { background: rgba(30,38,48,.9); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 4px; box-shadow: inset 0 0 0 1px rgba(236,242,248,.1); }
+.row { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 16px; border-radius: 11px; font-size: 17px; font-weight: 500; }
+.row svg { width: 22px; height: 22px; flex: none; color: rgba(238,242,246,.88); }
+.row.on { background: var(--ink); color: var(--on-focus); }
+.row.on svg { color: var(--on-focus); }
+.row .v { margin-left: auto; color: var(--soft); font-weight: 400; font-size: 15px; }
+.row.on .v { color: #45505c; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: linear-gradient(120deg, #3a1218, #0c1117 60%); border-radius: 18px; padding: 22px; }
+.chip { height: 46px; min-width: 46px; padding: 0 16px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; font-weight: 500;
+  background: rgba(236,242,248,.14); opacity: .8; }
+.chip.ic { padding: 0; }
+.chip svg { width: 22px; height: 22px; }
+.chip.on { background: var(--ink); color: var(--on-focus); opacity: 1; transform: scale(1.08); }
+.note { color: var(--soft); font-size: 14px; max-width: 72ch; }
+.dlg { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; background: rgba(30,38,48,.9); border-radius: 10px; padding: 9px 11px; }
+.dlg svg { width: 20px; height: 20px; flex: none; color: var(--warn); }
+.card .tag { font-family: var(--mono); font-size: 12px; color: var(--soft); }
+@media (prefers-reduced-motion: reduce) { .stage { transition: none; } }
+</style>
+
+<div class="wrap" id="app">
+  <header>
+    <h1>Значки «Полка»</h1>
+    <p class="sub">Свой набор залитых значков для лаунчера Mi TV: 29 знаков на все места интерфейса. На телевизоре они рисуются кодом, без картинок. Чтобы поправить значок, назовите его по коду под карточкой.</p>
+  </header>
+
+  <div class="rules">
+    <div class="rule"><b>Вес 30–45 %</b><span>Доля заливки у всех значков в одном коридоре: знаки без плашки толще, плашки с широкими прорезями.</span></div>
+    <div class="rule"><b>Сетка 24, поле 20</b><span>Круг ⌀20 и квадрат 20 — опорные фигуры; включите «Сетку», чтобы увидеть построение.</span></div>
+    <div class="rule"><b>Залитые, с мягкими углами</b><span>Ни одного острого угла: наименьший радиус 1,2, у крупных форм 4, у мелких 1,5. Округло, но не надуто.</span></div>
+    <div class="rule"><b>Две толщины линий и одна прорезь</b><span>Линии деталей 2,2, самостоятельные знаки (крестик, ручка лупы) 3,4, прорези 1,8.</span></div>
+    <div class="rule"><b>Один цвет</b><span>В покое — цвет текста, в фокусе — тёмный на белом. Состояние меняет форма, не цвет.</span></div>
+  </div>
+
+  <div class="bar" role="toolbar" aria-label="Вид">
+    <div class="seg" id="segVer"><button id="bNew" aria-pressed="true">Стало</button><button id="bOld" aria-pressed="false">Было</button></div>
+    <div class="seg" id="segState"><button id="bRest" aria-pressed="true">В покое</button><button id="bFocus" aria-pressed="false">В фокусе</button></div>
+    <div class="seg" id="segGrid"><button id="bGridOff" aria-pressed="true">Без сетки</button><button id="bGridOn" aria-pressed="false">Сетка</button></div>
+  </div>
+
+  <div id="groups" style="display:flex;flex-direction:column;gap:36px"></div>
+
+  <section>
+    <h2>В деле, настоящий размер на экране 1080p</h2>
+    <div class="demo" id="demo"></div>
+    <div class="chips" id="chips"></div>
+    <p class="note">Масштаб здесь примерно половина телевизорного: в меню значок 32 точки, в кнопках ответа 38, в погоде 64. Мельче 28 не используем.</p>
+  </section>
+</div>
+
+<script>
+const FI_OLD = {
+  play:    { n: "Открыть", f: '<path d="M8 5.2v13.6l11-6.8z"/>' },
+  move:    { n: "Переместить", f: '<path d="M2.6 12l4.6-4.4v8.8zM21.4 12l-4.6-4.4v8.8z"/><rect x="6.5" y="10.9" width="11" height="2.2" rx="1.1"/>' },
+  rowdown: { n: "Убрать из ряда", f: '<rect x="3" y="3" width="18" height="6.5" rx="2"/><path d="M12 12v5" fill="none" stroke-width="2.6"/><path d="M8.6 16.2L12 20.4l3.4-4.2z"/>' },
+  rowup:   { n: "В главный ряд", f: '<rect x="3" y="3" width="18" height="6.5" rx="2"/><path d="M12 20.5v-5" fill="none" stroke-width="2.6"/><path d="M8.6 16.3L12 12.1l3.4 4.2z"/>' },
+  eye:     { n: "Показать", f: '<path d="M12 5.2C6.8 5.2 3.4 9.4 2.3 12c1.1 2.6 4.5 6.8 9.7 6.8s8.6-4.2 9.7-6.8C20.6 9.4 17.2 5.2 12 5.2z"/>', c: '<circle cx="12" cy="12" r="4.3"/>', o: '<circle cx="12" cy="12" r="2.1"/>' },
+  eyeoff:  { n: "Скрыть", f: '<path d="M12 5.2C6.8 5.2 3.4 9.4 2.3 12c1.1 2.6 4.5 6.8 9.7 6.8s8.6-4.2 9.7-6.8C20.6 9.4 17.2 5.2 12 5.2z"/>', c: '<circle cx="12" cy="12" r="4.3"/><path d="M3.5 3.5l17 17" fill="none" stroke-width="5"/>', o: '<circle cx="12" cy="12" r="2.1"/><path d="M3.8 3.8l16.4 16.4" fill="none" stroke-width="2.1"/>' },
+  info:    { n: "О приложении", f: '<circle cx="12" cy="12" r="9.3"/>', c: '<rect x="10.9" y="10.4" width="2.2" height="6.6" rx="1.1" stroke="none"/><circle cx="12" cy="7.5" r="1.35" stroke="none"/>' },
+  search:  { n: "Поиск", f: '<circle cx="10.5" cy="10.5" r="7.2"/><path d="M16 16l4.6 4.6" fill="none" stroke-width="3.4"/>', c: '<circle cx="10.5" cy="10.5" r="4.3" stroke="none"/>' },
+  gear:    { n: "Настройки", f: '<circle cx="12" cy="12" r="7.1"/>' + [0,45,90,135,180,225,270,315].map(a => `<rect x="10.3" y="2.2" width="3.4" height="4" rx=".8" transform="rotate(${a} 12 12)"/>`).join(""), c: '<circle cx="12" cy="12" r="2.9" stroke="none"/>' },
+  screen:  { n: "Вход", f: '<rect x="2.5" y="4" width="19" height="13" rx="2.6"/><rect x="7" y="19" width="10" height="2" rx="1"/>', c: '<path d="M7.6 10.5h6.6M11.6 7.9l2.6 2.6-2.6 2.6" fill="none" stroke-width="1.9"/>' },
+  timer:   { n: "Таймер сна", f: '<path d="M20.2 14.6A8.6 8.6 0 1 1 9.4 3.8a7 7 0 0 0 10.8 10.8z"/><path d="M15.2 3.4h3.6l-3.6 4h3.6" fill="none" stroke-width="1.6"/>' },
+  plane:   { n: "Сообщения", f: '<path d="M20.8 3.3L2.9 10.2c-.9.4-.9 1.4 0 1.7l4.6 1.5 1.7 5.5c.2.7 1.1.9 1.6.4l2.5-2.3 4.7 3.4c.6.5 1.5.2 1.7-.6l2.9-15.3c.2-.9-.6-1.5-1.1-1.2z"/>', c: '<path d="M9.6 14.6l8.2-7.6" fill="none" stroke-width="1.5"/>' },
+  send:    { n: "Отправить", f: '<path d="M3.2 20.4L21 12 3.2 3.6v6.5L15 12 3.2 13.9z"/>' },
+  mic:     { n: "Голос", f: '<rect x="8.4" y="2.6" width="7.2" height="11.8" rx="3.6"/><path d="M5.6 11a6.4 6.4 0 0 0 12.8 0M12 17.4v3.4" fill="none" stroke-width="2"/>' },
+  open:    { n: "Открыть в Telegram", f: '<rect x="2.6" y="5.6" width="15.4" height="15.4" rx="3.2"/>', c: '<path d="M13.5 3.5h7v7M20 4l-8.5 8.5" fill="none" stroke-width="5.6"/>', o: '<path d="M14.4 3.6h6v6M20 4l-8 8" fill="none" stroke-width="2.1"/>' },
+  close:   { n: "Отмена", f: '<path d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8" fill="none" stroke-width="3"/>' },
+  uptime:  { n: "Без перезагрузки", f: '<circle cx="12" cy="12" r="9.3"/>', c: '<path d="M12 7v5.3l3.5 2.1" fill="none" stroke-width="2"/>' },
+  memory:  { n: "Память", f: '<rect x="5.8" y="5.8" width="12.4" height="12.4" rx="2.4"/>' + [8.6,12,15.4].map(v => `<rect x="${v - .75}" y="2.4" width="1.5" height="3" rx=".5"/><rect x="${v - .75}" y="18.6" width="1.5" height="3" rx=".5"/><rect x="2.4" y="${v - .75}" width="3" height="1.5" rx=".5"/><rect x="18.6" y="${v - .75}" width="3" height="1.5" rx=".5"/>`).join(""), c: '<rect x="9.2" y="9.2" width="5.6" height="5.6" rx="1" stroke="none"/>', o: '<rect x="10.6" y="10.6" width="2.8" height="2.8" rx=".5" stroke="none"/>' },
+  clean:   { n: "Освободить", f: '<path d="M10 5.4l1.9 5.4 5.4 1.9-5.4 1.9-1.9 5.4-1.9-5.4-5.4-1.9 5.4-1.9z"/><path d="M18 2.6l.9 1.9 1.9.9-1.9.9-.9 1.9-.9-1.9-1.9-.9 1.9-.9z"/><path d="M18.2 15.4l.6 1.3 1.3.6-1.3.6-.6 1.3-.6-1.3-1.3-.6 1.3-.6z"/>' },
+  storage: { n: "Место", f: '<path d="M4 6.2c0-2 3.6-3.6 8-3.6s8 1.6 8 3.6v11.6c0 2-3.6 3.6-8 3.6s-8-1.6-8-3.6z"/>', c: '<path d="M4 6.6c0 2 3.6 3.4 8 3.4s8-1.4 8-3.4M4 12.2c0 2 3.6 3.4 8 3.4s8-1.4 8-3.4" fill="none" stroke-width="1.6"/>' },
+  chat:    { n: "Текст сообщений", f: '<path d="M4.6 4h14.8c1.2 0 2.1.9 2.1 2.1v9.6c0 1.2-.9 2.1-2.1 2.1h-8.9l-4.8 3.6v-3.6H4.6c-1.2 0-2.1-.9-2.1-2.1V6.1C2.5 4.9 3.4 4 4.6 4z"/>', c: '<path d="M7.2 9.2h9.6M7.2 12.8h5.8" fill="none" stroke-width="1.9"/>' },
+  shield:  { n: "VPN", f: '<path d="M12 2.6l7.9 3v6.1c0 4.9-3.3 8.5-7.9 9.8-4.6-1.3-7.9-4.9-7.9-9.8V5.6z"/>', c: '<path d="M8.4 12.2l2.6 2.6 4.6-5" fill="none" stroke-width="2"/>' },
+  wifi:    { n: "Wi-Fi", f: '<path d="M12 20.6L1.9 9.4a14.6 14.6 0 0 1 20.2 0z"/>', c: '<path d="M5 12.9a10 10 0 0 1 14 0M8.3 16.5a5.2 5.2 0 0 1 7.4 0" fill="none" stroke-width="1.7"/>' },
+  warn:    { n: "Внимание", f: '<rect x="5.4" y="5.4" width="13.2" height="13.2" rx="3" transform="rotate(45 12 12)"/>', c: '<rect x="10.95" y="7" width="2.1" height="6.4" rx="1.05" stroke="none"/><circle cx="12" cy="16.2" r="1.25" stroke="none"/>' },
+  sun:     { n: "Ясно", f: '<circle cx="12" cy="12" r="4.6"/>' + [0,45,90,135,180,225,270,315].map(a => `<rect x="11" y="1.8" width="2" height="3.4" rx="1" transform="rotate(${a} 12 12)"/>`).join("") },
+  cloud:   { n: "Облачно", f: '<path d="M7 19.4h10.6a4.4 4.4 0 0 0 .5-8.8 6.2 6.2 0 0 0-11.9 1.6A3.7 3.7 0 0 0 7 19.4z"/>' },
+  rain:    { n: "Дождь", f: '<path d="M7 15.2h10.6a4.4 4.4 0 0 0 .5-8.8 6.2 6.2 0 0 0-11.9 1.6A3.7 3.7 0 0 0 7 15.2z"/><path d="M8 18.2l-.9 2.6M12 18.2l-.9 2.6M16 18.2l-.9 2.6" fill="none" stroke-width="2"/>' },
+};
+// Набор «Полка» 2: поле 2–22, мягкая обводка 2,4 (наименьший радиус угла 1,2), рисунок ужат до 0,951,
+// линии деталей 2,2, самостоятельные знаки 3,4, прорези 1,8, радиусы 4 и 1,5, вес 30–45 %.
+const T9 = 'transform="translate(1.8 1.8) scale(.85)"';
+const FI_NEW = {
+  play:    { n: "Открыть", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<path d="M10.4 9v6l4.7-3z" stroke-width="2.2"/>' },
+  move:    { n: "Переместить", f: '<rect x="2.75" y="5.25" width="18.5" height="13.5" rx="2.8"/>', c: '<path d="M7 12h10M9.4 9.4L6.8 12l2.6 2.6M14.6 9.4l2.6 2.6-2.6 2.6" fill="none" stroke-width="1.8"/>' },
+  rowdown: { n: "Убрать из ряда", f: '<rect x="2.75" y="2.75" width="18.5" height="6.2" rx="2.5"/><path d="M12 11.6v4.4" fill="none" stroke-width="2.2"/><path d="M8.4 15.6L12 20.4l3.6-4.8z"/>' },
+  rowup:   { n: "В главный ряд", f: '<rect x="2.75" y="2.75" width="18.5" height="6.2" rx="2.5"/><path d="M12 20.6v-4.4" fill="none" stroke-width="2.2"/><path d="M8.4 16.6L12 11.8l3.6 4.8z"/>' },
+  eye:     { n: "Показать", f: '<path d="M12 5.6C7.2 5.6 4 9.5 2.9 12c1.1 2.5 4.3 6.4 9.1 6.4s8-3.9 9.1-6.4C20 9.5 16.8 5.6 12 5.6z"/>', c: '<circle cx="12" cy="12" r="4.1" stroke="none"/>', o: '<circle cx="12" cy="12" r="2.1" stroke="none"/>' },
+  eyeoff:  { n: "Скрыть", f: '<path d="M12 5.6C7.2 5.6 4 9.5 2.9 12c1.1 2.5 4.3 6.4 9.1 6.4s8-3.9 9.1-6.4C20 9.5 16.8 5.6 12 5.6z"/>', c: '<circle cx="12" cy="12" r="4.1" stroke="none"/><path d="M4 4l16 16" fill="none" stroke-width="5.8"/>', o: '<circle cx="12" cy="12" r="2.1" stroke="none"/><path d="M4.1 4.1l15.8 15.8" fill="none" stroke-width="2.2"/>' },
+  info:    { n: "О приложении", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<rect x="10.9" y="10.6" width="2.2" height="6.2" rx="1.1" stroke="none"/><circle cx="12" cy="7.7" r="1.4" stroke="none"/>' },
+  search:  { n: "Поиск", f: '<circle cx="10.4" cy="10.4" r="6.6"/><path d="M15.6 15.6l4.5 4.5" fill="none" stroke-width="3.4"/>', c: '<circle cx="10.4" cy="10.4" r="3.5" stroke="none"/>' },
+  gear:    { n: "Настройки", f: '<circle cx="12" cy="12" r="6.2"/>' + [0,45,90,135,180,225,270,315].map(a => `<rect x="10.8" y="3.2" width="2.4" height="3.4" rx=".6" transform="rotate(${a} 12 12)"/>`).join(""), c: '<circle cx="12" cy="12" r="3.1" stroke="none"/>' },
+  screen:  { n: "Вход", f: '<rect x="2.75" y="4.25" width="18.5" height="11.25" rx="2.8"/><rect x="7.8" y="19.4" width="8.4" height=".4" rx=".2"/>', c: '<path d="M7.6 10.1h7.2M12.2 7.4l2.7 2.7-2.7 2.7" fill="none" stroke-width="1.8"/>' },
+  timer:   { n: "Таймер сна", f: '<path d="M20.4 14.5A8.6 8.6 0 1 1 9.5 3.6a9 9 0 0 0 10.9 10.9z"/>' },
+  plane:   { n: "Сообщения", f: `<path ${T9} d="M20.8 3.3L2.9 10.2c-.9.4-.9 1.4 0 1.7l4.6 1.5 1.7 5.5c.2.7 1.1.9 1.6.4l2.5-2.3 4.7 3.4c.6.5 1.5.2 1.7-.6l2.9-15.3c.2-.9-.6-1.5-1.1-1.2z"/>`, c: `<path ${T9} d="M9.6 14.6l8.2-7.6" fill="none" stroke-width="2"/>` },
+  send:    { n: "Отправить", f: '<path d="M3.4 20.2L20.8 12 3.4 3.8v6.3L14.6 12 3.4 13.9z"/>' },
+  mic:     { n: "Голос", f: '<rect x="8.4" y="2.75" width="7.2" height="11.3" rx="3.6"/><path d="M5.3 11a6.7 6.7 0 0 0 13.4 0M12 17.8v3" fill="none" stroke-width="2.2"/>' },
+  open:    { n: "Открыть в Telegram", f: '<rect x="2.75" y="6.25" width="15" height="15" rx="2.8"/>', c: '<path d="M13.8 3.6h6.6v6.6M19.9 4.1l-8 8" fill="none" stroke-width="5.8"/>', o: '<path d="M14.6 3.4h6v6M20.1 3.9l-8 8" fill="none" stroke-width="2.2"/>' },
+  close:   { n: "Отмена", f: '<path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" fill="none" stroke-width="3.4"/>' },
+  uptime:  { n: "Без перезагрузки", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<path d="M12 6.9v5.4l3.6 2.2" fill="none" stroke-width="1.8"/>' },
+  memory:  { n: "Память", f: '<rect x="6.6" y="6.6" width="10.8" height="10.8" rx="2.2"/>' + [9.4,14.6].map(v => `<rect x="${v - .2}" y="3.2" width=".4" height="2.6" rx=".2"/><rect x="${v - .2}" y="18.2" width=".4" height="2.6" rx=".2"/><rect x="3.2" y="${v - .2}" width="2.6" height=".4" rx=".2"/><rect x="18.2" y="${v - .2}" width="2.6" height=".4" rx=".2"/>`).join(""), c: '<rect x="9.3" y="9.3" width="5.4" height="5.4" rx="1.2" stroke="none"/>', o: '<rect x="10.8" y="10.8" width="2.4" height="2.4" rx=".8" stroke="none"/>' },
+  clean:   { n: "Освободить", f: '<path d="M10.5 5.2l2.4 5.4 5.4 2.4-5.4 2.4-2.4 5.4-2.4-5.4L2.7 13l5.4-2.4z"/><path d="M18.4 2.9l1 2.1 2.1 1-2.1 1-1 2.1-1-2.1-2.1-1 2.1-1z"/>' },
+  storage: { n: "Место", f: '<path d="M4.25 6.4c0-2 3.5-3.65 7.75-3.65s7.75 1.65 7.75 3.65v11.2c0 2-3.5 3.65-7.75 3.65S4.25 19.6 4.25 17.6z"/>', c: '<path d="M4 6.9c0 2 3.6 3.4 8 3.4s8-1.4 8-3.4M4 12.4c0 2 3.6 3.4 8 3.4s8-1.4 8-3.4" fill="none" stroke-width="1.8"/>' },
+  chat:    { n: "Текст сообщений", f: '<path d="M5 4.25h14c1.25 0 2.25 1 2.25 2.25v8c0 1.25-1 2.25-2.25 2.25h-8.4l-4.6 3.5v-3.5H5c-1.25 0-2.25-1-2.25-2.25v-8C2.75 5.25 3.75 4.25 5 4.25z"/>', c: '<path d="M7.2 9h9.6M7.2 12.4h5.6" fill="none" stroke-width="1.8"/>' },
+  shield:  { n: "VPN", f: '<path d="M12 2.75l7.25 2.8v5.9c0 4.7-3.1 8.2-7.25 9.5-4.15-1.3-7.25-4.8-7.25-9.5v-5.9z"/>', c: '<path d="M8.6 12.1l2.4 2.4 4.4-4.8" fill="none" stroke-width="1.8"/>' },
+  wifi:    { n: "Wi-Fi", f: '<path d="M12 20.1L2.75 9.8a13.6 13.6 0 0 1 18.5 0z"/>', c: '<path d="M5.9 13.2a8.7 8.7 0 0 1 12.2 0M9.1 16.6a4.2 4.2 0 0 1 5.8 0" fill="none" stroke-width="1.8"/>' },
+  warn:    { n: "Внимание", f: '<rect x="5.1" y="5.1" width="13.8" height="13.8" rx="2.8" transform="rotate(45 12 12)"/>', c: '<rect x="10.9" y="7" width="2.2" height="6.4" rx="1.1" stroke="none"/><circle cx="12" cy="16.4" r="1.35" stroke="none"/>' },
+  news:    { n: "Новости", f: '<rect x="2.75" y="4.25" width="14.5" height="15.5" rx="2.25"/><rect x="18.4" y="8" width="2.85" height="11.75" rx="1.2"/>', c: '<rect x="5.8" y="7.4" width="8.4" height="4" rx=".6" stroke="none"/><path d="M6.2 14.6h7.6M6.2 17.1h4.8" fill="none" stroke-width="1.8"/>' },
+  update:  { n: "Обновление", f: '<circle cx="12" cy="12" r="8.5"/>', c: '<path d="M12 7.4v7M8.9 11.6l3.1 3.1 3.1-3.1" fill="none" stroke-width="1.8"/>' },
+  sun:     { n: "Ясно", f: '<circle cx="12" cy="12" r="4.1"/>' + [0,45,90,135,180,225,270,315].map(a => `<rect x="11.6" y="3.2" width=".8" height="2.4" rx=".4" transform="rotate(${a} 12 12)"/>`).join("") },
+  cloud:   { n: "Облачно", f: `<path ${T9} d="M7 19.4h10.6a4.4 4.4 0 0 0 .5-8.8 6.2 6.2 0 0 0-11.9 1.6A3.7 3.7 0 0 0 7 19.4z"/>` },
+  rain:    { n: "Дождь", f: `<path ${T9} d="M7 14.8h10.6a4.4 4.4 0 0 0 .5-8.8 6.2 6.2 0 0 0-11.9 1.6A3.7 3.7 0 0 0 7 14.8z"/><path ${T9} d="M8 18l-.9 2.6M12 18l-.9 2.6M16 18l-.9 2.6" fill="none" stroke-width="2.6"/>` },
+};
+let FI = FI_NEW;
+const FI_GROUPS = [
+  ["Меню приложения", ["play", "move", "rowdown", "rowup", "eyeoff", "info"]],
+  ["Кнопки сверху", ["plane", "search", "screen", "timer", "gear"]],
+  ["Быстрые настройки", ["uptime", "memory", "clean", "storage", "chat", "news", "shield", "wifi", "update"]],
+  ["Ответ и уведомления", ["mic", "eye", "eyeoff", "open", "close", "send", "warn"]],
+  ["Погода", ["sun", "cloud", "rain"]],
+];
+
+const USE = {
+  play: "Меню приложения", move: "Меню приложения", rowdown: "Меню, главный ряд", rowup: "Меню, ряд «Ещё»", eyeoff: "Меню, настройки, переписка",
+  info: "Меню приложения", plane: "Кнопка сообщений сверху", search: "Кнопка сверху", screen: "Кнопка «Вход»", timer: "Кнопка таймера сна",
+  gear: "Кнопка настроек, «Все настройки»", uptime: "Быстрые настройки", memory: "Быстрые настройки", clean: "Быстрые настройки",
+  storage: "Быстрые настройки", chat: "Быстрые настройки", shield: "Настройки, VPN", wifi: "Быстрые настройки", update: "Быстрые настройки, «Обновление»", news: "Быстрые настройки, «Новости»", mic: "Переписка, ответ голосом",
+  eye: "Переписка", open: "Переписка, стопка уведомлений", close: "Ответ, стопка уведомлений", send: "Ответ — «Отправить»",
+  warn: "Вопрос про VPN", sun: "Погода", cloud: "Погода", rain: "Погода",
+};
+const maskDefs = (set, pre) => Object.entries(set).filter(([, v]) => v.c).map(([k, v]) =>
+  `<mask id="fm-${pre}-${k}" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="#fff"/><g fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${v.c}</g></mask>`).join("");
+document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${maskDefs(FI_NEW, "n")}${maskDefs(FI_OLD, "o")}</defs></svg>`);
+const ico = (k, size) => {
+  const v = FI[k], nw = FI !== FI_OLD, sw = nw ? 2.52 : 1.5;
+  const g = (m, body) => `<g${m} fill="currentColor" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
+  return `<svg viewBox="0 0 24 24" ${size ? `width="${size}" height="${size}"` : ""} aria-hidden="true"><g${nw ? ' transform="translate(.588 .588) scale(.951)"' : ""}>${g(v.c ? ` mask="url(#fm-${nw ? "n" : "o"}-${k})"` : "", v.f)}${v.o ? g("", v.o) : ""}</g></svg>`;
+};
+const gridSvg = `<svg class="grid" viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width=".05" fill="none">${[...Array(25)].map((_, i) => `<path d="M${i} 0V24M0 ${i}H24"/>`).join("")}</g>
+  <rect x="2" y="2" width="20" height="20" fill="none" stroke="currentColor" stroke-width=".1" stroke-dasharray=".35 .35"/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width=".1"/></svg>`;
+
+function render() {
+const seen = new Set();
+document.getElementById("groups").innerHTML = FI_GROUPS.map(([g, ks]) => {
+  const fresh = ks.filter(k => !seen.has(k)); fresh.forEach(k => seen.add(k));
+  if (!fresh.length) return "";
+  return `<section><h2>${g}</h2><div class="cards">${fresh.map(k => `<article class="card">
+    <div class="stage">${gridSvg}${ico(k)}</div>
+    <div class="sizes"><span>${ico(k, 32)}</span><span>${ico(k, 22)}</span><span>${ico(k, 16)}</span></div>
+    <div class="meta"><span class="n">${FI[k].n}</span><span class="u">${USE[k] || ""}</span><code>${k}</code></div></article>`).join("")}</div></section>`;
+}).join("");
+
+const row = (k, t, v = "", on = false) => `<div class="row${on ? " on" : ""}">${k ? ico(k) : ""}<span>${t}</span>${v ? `<span class="v">${v}</span>` : ""}</div>`;
+document.getElementById("demo").innerHTML =
+  `<div class="panel">${row("play", "Открыть", "", true)}${row("move", "Переместить")}${row("rowdown", "Убрать из главного ряда")}${row("eyeoff", "Скрыть")}${row("info", "О приложении")}</div>
+   <div class="panel">${row("uptime", "Работает без перезагрузки", "7 дн.")}${row("memory", "Свободно памяти", "412 МБ", true)}${row("clean", "Освободить память")}${row("shield", "VPN", "выключен")}${row("wifi", "Wi-Fi и интернет")}</div>`;
+document.getElementById("chips").innerHTML =
+  `<span class="chip">${ico("plane")}5</span><span class="chip ic">${ico("search")}</span><span class="chip">${ico("screen")}Вход</span><span class="chip">${ico("timer")}45 мин</span><span class="chip ic on">${ico("gear")}</span>
+   <span class="chip ic">${ico("mic")}</span><span class="chip ic">${ico("eye")}</span><span class="chip ic">${ico("open")}</span><span class="chip">${ico("send")}Отправить</span>`;
+
+}
+render();
+// переключатели вида
+const app = document.getElementById("app");
+function seg(a, b, on) { a.setAttribute("aria-pressed", String(!on)); b.setAttribute("aria-pressed", String(on)); }
+const bR = document.getElementById("bRest"), bF = document.getElementById("bFocus"), gOff = document.getElementById("bGridOff"), gOn = document.getElementById("bGridOn");
+bR.onclick = () => { app.classList.remove("focus"); seg(bR, bF, false); };
+bF.onclick = () => { app.classList.add("focus"); seg(bR, bF, true); };
+gOff.onclick = () => { app.classList.remove("showgrid"); seg(gOff, gOn, false); };
+const bN = document.getElementById("bNew"), bO = document.getElementById("bOld");
+bN.onclick = () => { FI = FI_NEW; render(); seg(bN, bO, false); };
+bO.onclick = () => { FI = FI_OLD; render(); seg(bN, bO, true); };
+gOn.onclick = () => { app.classList.add("showgrid"); seg(gOff, gOn, true); };
+</script>
